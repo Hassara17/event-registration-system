@@ -230,3 +230,69 @@ def get_event_stats(
         "cancelled_registrations": cancelled_registrations,
         "available_seats": available_seats,
     }
+
+
+def get_registration_status(
+    db: Session,
+    event_id: int,
+    user_id: int,
+) -> dict:
+
+    # 1. Check that the event exists
+    event = (
+        db.query(Event)
+        .filter(Event.id == event_id)
+        .first()
+    )
+
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found",
+        )
+
+    # 2. Count active registrations
+    active_registrations = (
+        db.query(func.count(Registration.id))
+        .filter(
+            Registration.event_id == event_id,
+            Registration.status == "registered",
+        )
+        .scalar()
+    )
+
+    # 3. Calculate available seats
+    available_seats = (
+        event.capacity - active_registrations
+    )
+
+    # 4. Get the user's latest registration
+    registration = (
+        db.query(Registration)
+        .filter(
+            Registration.event_id == event_id,
+            Registration.user_id == user_id,
+        )
+        .order_by(Registration.id.desc())
+        .first()
+    )
+
+    # 5. Determine the user's registration status
+    if registration is None:
+        registration_status = "not_registered"
+
+    elif registration.status == "registered":
+        registration_status = "registered"
+
+    elif registration.status == "cancelled":
+        registration_status = "cancelled"
+
+    else:
+        registration_status = registration.status
+
+    return {
+        "event_id": event.id,
+        "capacity": event.capacity,
+        "available_seats": available_seats,
+        "registration_status": registration_status,
+    }
