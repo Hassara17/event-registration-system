@@ -56,7 +56,10 @@ class Event(Base):
         nullable=False,
     )
 
-    organizer = relationship(
-        "User",
+    organizer: Mapped["User"] = relationship(
         back_populates="events",
+    )
+
+    registrations: Mapped[list["Registration"]] = relationship(
+        back_populates="event",
     )
