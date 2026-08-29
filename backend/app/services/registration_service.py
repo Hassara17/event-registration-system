@@ -123,3 +123,39 @@ def cancel_registration(
     db.refresh(registration)
 
     return registration
+
+
+def get_event_registrations(
+    db: Session,
+    event_id: int,
+    organizer_id: int,
+) -> list[Registration]:
+    # 1. Check that the event exists
+    event = (
+        db.query(Event)
+        .filter(Event.id == event_id)
+        .first()
+    )
+
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found",
+        )
+
+    # 2. Check that the current user owns the event
+    if event.organizer_id != organizer_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only view registrations for your own events",
+        )
+
+    # 3. Return active registrations
+    return (
+        db.query(Registration)
+        .filter(
+            Registration.event_id == event_id,
+            Registration.status == "registered",
+        )
+        .all()
+    )

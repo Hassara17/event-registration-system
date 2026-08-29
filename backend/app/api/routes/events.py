@@ -5,6 +5,7 @@ from app.api.deps import get_db, require_role
 from app.models.event import Event
 from app.models.user import User
 from app.schemas.event import EventCreate, EventResponse, EventUpdate
+from app.schemas.registration import RegistrationResponse
 from app.services.event_service import (
     create_event,
     delete_event,
@@ -12,6 +13,7 @@ from app.services.event_service import (
     get_events,
     update_event,
 )
+from app.services.registration_service import get_event_registrations
 
 
 router = APIRouter(
@@ -45,6 +47,22 @@ def list_events(
     db: Session = Depends(get_db),
 ):
     return get_events(db)
+
+
+@router.get(
+    "/{event_id}/registrations",
+    response_model=list[RegistrationResponse],
+)
+def get_event_registrations_endpoint(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("organizer")),
+):
+    return get_event_registrations(
+        db=db,
+        event_id=event_id,
+        organizer_id=current_user.id,
+    )
 
 
 @router.get(
