@@ -1,10 +1,16 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, require_role
-from app.models.event import Event
 from app.models.user import User
-from app.schemas.event import EventCreate, EventResponse, EventUpdate
+from app.schemas.event import (
+    EventCreate,
+    EventResponse,
+    EventUpdate,
+)
+from app.schemas.event_stats import EventStatsResponse
 from app.schemas.registration import RegistrationResponse
 from app.services.event_service import (
     create_event,
@@ -13,7 +19,10 @@ from app.services.event_service import (
     get_events,
     update_event,
 )
-from app.services.registration_service import get_event_registrations
+from app.services.registration_service import (
+    get_event_registrations,
+    get_event_stats,
+)
 
 
 router = APIRouter(
@@ -30,7 +39,9 @@ router = APIRouter(
 def create_event_endpoint(
     event_data: EventCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("organizer")),
+    current_user: User = Depends(
+        require_role("organizer")
+    ),
 ):
     return create_event(
         db=db,
@@ -44,9 +55,17 @@ def create_event_endpoint(
     response_model=list[EventResponse],
 )
 def list_events(
+    search: str | None = None,
+    venue: str | None = None,
+    event_date: date | None = None,
     db: Session = Depends(get_db),
 ):
-    return get_events(db)
+    return get_events(
+        db=db,
+        search=search,
+        venue=venue,
+        event_date=event_date,
+    )
 
 
 @router.get(
@@ -56,9 +75,29 @@ def list_events(
 def get_event_registrations_endpoint(
     event_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("organizer")),
+    current_user: User = Depends(
+        require_role("organizer")
+    ),
 ):
     return get_event_registrations(
+        db=db,
+        event_id=event_id,
+        organizer_id=current_user.id,
+    )
+
+
+@router.get(
+    "/{event_id}/stats",
+    response_model=EventStatsResponse,
+)
+def get_event_stats_endpoint(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role("organizer")
+    ),
+):
+    return get_event_stats(
         db=db,
         event_id=event_id,
         organizer_id=current_user.id,
@@ -73,7 +112,10 @@ def get_event_endpoint(
     event_id: int,
     db: Session = Depends(get_db),
 ):
-    event = get_event(db, event_id)
+    event = get_event(
+        db,
+        event_id,
+    )
 
     if event is None:
         raise HTTPException(
@@ -92,9 +134,14 @@ def update_event_endpoint(
     event_id: int,
     event_data: EventUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("organizer")),
+    current_user: User = Depends(
+        require_role("organizer")
+    ),
 ):
-    event = get_event(db, event_id)
+    event = get_event(
+        db,
+        event_id,
+    )
 
     if event is None:
         raise HTTPException(
@@ -122,9 +169,14 @@ def update_event_endpoint(
 def delete_event_endpoint(
     event_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("organizer")),
+    current_user: User = Depends(
+        require_role("organizer")
+    ),
 ):
-    event = get_event(db, event_id)
+    event = get_event(
+        db,
+        event_id,
+    )
 
     if event is None:
         raise HTTPException(

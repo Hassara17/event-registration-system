@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -11,6 +12,7 @@ def create_registration(
     event_id: int,
     user_id: int,
 ) -> Registration:
+
     # 1. Check that the event exists
     event = (
         db.query(Event)
@@ -83,6 +85,7 @@ def get_user_registrations(
     db: Session,
     user_id: int,
 ) -> list[Registration]:
+
     return (
         db.query(Registration)
         .filter(
@@ -98,6 +101,7 @@ def cancel_registration(
     event_id: int,
     user_id: int,
 ) -> Registration:
+
     # 1. Find the user's active registration
     registration = (
         db.query(Registration)
@@ -130,6 +134,7 @@ def get_event_registrations(
     event_id: int,
     organizer_id: int,
 ) -> list[Registration]:
+
     # 1. Check that the event exists
     event = (
         db.query(Event)
@@ -159,3 +164,69 @@ def get_event_registrations(
         )
         .all()
     )
+
+
+def get_event_stats(
+    db: Session,
+    event_id: int,
+    organizer_id: int,
+) -> dict:
+
+    # 1. Check that the event exists
+    event = (
+        db.query(Event)
+        .filter(Event.id == event_id)
+        .first()
+    )
+
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found",
+        )
+
+    # 2. Check that the organizer owns the event
+    if event.organizer_id != organizer_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only view statistics for your own events",
+        )
+
+    # 3. Count active registrations
+    active_registrations = (
+        db.query(func.count(Registration.id))
+        .filter(
+            Registration.event_id == event_id,
+            Registration.status == "registered",
+        )
+        .scalar()
+    )
+
+    # 4. Count cancelled registrations
+    cancelled_registrations = (
+        db.query(func.count(Registration.id))
+        .filter(
+            Registration.event_id == event_id,
+            Registration.status == "cancelled",
+        )
+        .scalar()
+    )
+
+    # 5. Calculate total registrations
+    total_registrations = (
+        active_registrations + cancelled_registrations
+    )
+
+    # 6. Calculate available seats
+    available_seats = (
+        event.capacity - active_registrations
+    )
+
+    return {
+        "event_id": event.id,
+        "capacity": event.capacity,
+        "total_registrations": total_registrations,
+        "active_registrations": active_registrations,
+        "cancelled_registrations": cancelled_registrations,
+        "available_seats": available_seats,
+    }

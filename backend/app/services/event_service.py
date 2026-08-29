@@ -1,3 +1,5 @@
+from datetime import date, datetime, time, timedelta
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -32,17 +34,58 @@ def get_event(
     db: Session,
     event_id: int,
 ) -> Event | None:
-    statement = select(Event).where(Event.id == event_id)
+    statement = select(Event).where(
+        Event.id == event_id
+    )
 
     return db.scalar(statement)
 
 
 def get_events(
     db: Session,
+    search: str | None = None,
+    venue: str | None = None,
+    event_date: date | None = None,
 ) -> list[Event]:
-    statement = select(Event).order_by(Event.id.desc())
+    statement = select(Event).where(
+        Event.is_published.is_(True)
+    )
 
-    return list(db.scalars(statement).all())
+    # Search by title
+    if search:
+        statement = statement.where(
+            Event.title.ilike(f"%{search}%")
+        )
+
+    # Search by venue
+    if venue:
+        statement = statement.where(
+            Event.venue.ilike(f"%{venue}%")
+        )
+
+    # Filter by date
+    if event_date:
+        start_of_day = datetime.combine(
+            event_date,
+            time.min,
+        )
+
+        start_of_next_day = (
+            start_of_day + timedelta(days=1)
+        )
+
+        statement = statement.where(
+            Event.start_date >= start_of_day,
+            Event.start_date < start_of_next_day,
+        )
+
+    statement = statement.order_by(
+        Event.start_date.asc()
+    )
+
+    return list(
+        db.scalars(statement).all()
+    )
 
 
 def update_event(
