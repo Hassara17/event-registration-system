@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import (
@@ -66,6 +66,25 @@ def list_events(
     search: str | None = None,
     venue: str | None = None,
     event_date: date | None = None,
+    page: int = Query(
+        default=1,
+        ge=1,
+        description="Page number",
+    ),
+    page_size: int = Query(
+        default=10,
+        ge=1,
+        le=100,
+        description="Number of events per page",
+    ),
+    sort_by: str = Query(
+        default="start_date",
+        description="Sort field: start_date, title, venue",
+    ),
+    sort_order: str = Query(
+        default="asc",
+        description="Sort order: asc or desc",
+    ),
     db: Session = Depends(get_db),
 ):
     return get_events(
@@ -73,6 +92,10 @@ def list_events(
         search=search,
         venue=venue,
         event_date=event_date,
+        page=page,
+        page_size=page_size,
+        sort_by=sort_by,
+        sort_order=sort_order,
     )
 
 

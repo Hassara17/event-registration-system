@@ -46,14 +46,27 @@ def get_events(
     search: str | None = None,
     venue: str | None = None,
     event_date: date | None = None,
+    page: int = 1,
+    page_size: int = 10,
+    sort_by: str = "start_date",
+    sort_order: str = "asc",
 ) -> list[Event]:
     """
-    Return published events with optional filters.
+    Return published events with filtering,
+    pagination, and sorting.
 
     Filters:
     - search: searches title and description
     - venue: searches venue
     - event_date: matches events starting on that date
+
+    Pagination:
+    - page: page number starting from 1
+    - page_size: number of events per page
+
+    Sorting:
+    - sort_by: start_date, title, or venue
+    - sort_order: asc or desc
     """
 
     # Only published events are visible to users
@@ -61,7 +74,9 @@ def get_events(
         Event.is_published.is_(True)
     )
 
+    # --------------------------------------------------
     # Search by title OR description
+    # --------------------------------------------------
     if search:
         search_pattern = f"%{search}%"
 
@@ -72,13 +87,17 @@ def get_events(
             )
         )
 
+    # --------------------------------------------------
     # Filter by venue
+    # --------------------------------------------------
     if venue:
         statement = statement.where(
             Event.venue.ilike(f"%{venue}%")
         )
 
-    # Filter by event start date
+    # --------------------------------------------------
+    # Filter by event date
+    # --------------------------------------------------
     if event_date:
         start_of_day = datetime.combine(
             event_date,
@@ -94,9 +113,37 @@ def get_events(
             Event.start_date < start_of_next_day,
         )
 
-    # Upcoming events first
-    statement = statement.order_by(
-        Event.start_date.asc()
+    # --------------------------------------------------
+    # Sorting
+    # --------------------------------------------------
+    if sort_by == "title":
+        sort_column = Event.title
+
+    elif sort_by == "venue":
+        sort_column = Event.venue
+
+    else:
+        # Default sorting
+        sort_column = Event.start_date
+
+    if sort_order.lower() == "desc":
+        statement = statement.order_by(
+            sort_column.desc()
+        )
+    else:
+        statement = statement.order_by(
+            sort_column.asc()
+        )
+
+    # --------------------------------------------------
+    # Pagination
+    # --------------------------------------------------
+    offset = (page - 1) * page_size
+
+    statement = statement.offset(
+        offset
+    ).limit(
+        page_size
     )
 
     return list(
