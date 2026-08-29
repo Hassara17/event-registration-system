@@ -1,6 +1,6 @@
 from datetime import date, datetime, time, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.models.event import Event
@@ -47,23 +47,38 @@ def get_events(
     venue: str | None = None,
     event_date: date | None = None,
 ) -> list[Event]:
+    """
+    Return published events with optional filters.
+
+    Filters:
+    - search: searches title and description
+    - venue: searches venue
+    - event_date: matches events starting on that date
+    """
+
+    # Only published events are visible to users
     statement = select(Event).where(
         Event.is_published.is_(True)
     )
 
-    # Search by title
+    # Search by title OR description
     if search:
+        search_pattern = f"%{search}%"
+
         statement = statement.where(
-            Event.title.ilike(f"%{search}%")
+            or_(
+                Event.title.ilike(search_pattern),
+                Event.description.ilike(search_pattern),
+            )
         )
 
-    # Search by venue
+    # Filter by venue
     if venue:
         statement = statement.where(
             Event.venue.ilike(f"%{venue}%")
         )
 
-    # Filter by date
+    # Filter by event start date
     if event_date:
         start_of_day = datetime.combine(
             event_date,
@@ -79,6 +94,7 @@ def get_events(
             Event.start_date < start_of_next_day,
         )
 
+    # Upcoming events first
     statement = statement.order_by(
         Event.start_date.asc()
     )
