@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, require_role
 from app.models.user import User
 
 
@@ -25,4 +25,18 @@ def get_me(
         "email": current_user.email,
         "role": current_user.role,
         "is_active": current_user.is_active,
+    }
+
+
+@router.get("/organizer-test")
+def organizer_test(
+    current_user: Annotated[
+        User,
+        Depends(require_role("organizer")),
+    ],
+):
+    return {
+        "message": "Organizer access granted",
+        "user": current_user.email,
+        "role": current_user.role,
     }
