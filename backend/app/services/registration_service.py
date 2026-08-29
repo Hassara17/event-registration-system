@@ -1,5 +1,6 @@
-from fastapi import HTTPException, status
+from datetime import datetime
 
+from fastapi import HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -12,7 +13,6 @@ def create_registration(
     event_id: int,
     user_id: int,
 ) -> Registration:
-
     # 1. Check that the event exists
     event = (
         db.query(Event)
@@ -33,7 +33,14 @@ def create_registration(
             detail="Event is not published",
         )
 
-    # 3. Check if the user has already registered
+    # 3. Check that the event has not already started
+    if event.start_date <= datetime.now():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Registration is closed because the event has already started or passed",
+        )
+
+    # 4. Check if the user has already registered
     existing_registration = (
         db.query(Registration)
         .filter(
@@ -50,7 +57,7 @@ def create_registration(
             detail="You are already registered for this event",
         )
 
-    # 4. Count current active registrations
+    # 5. Count current active registrations
     registration_count = (
         db.query(func.count(Registration.id))
         .filter(
@@ -60,14 +67,14 @@ def create_registration(
         .scalar()
     )
 
-    # 5. Check event capacity
+    # 6. Check event capacity
     if registration_count >= event.capacity:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Event capacity is full",
         )
 
-    # 6. Create registration
+    # 7. Create registration
     registration = Registration(
         user_id=user_id,
         event_id=event_id,
@@ -85,7 +92,6 @@ def get_user_registrations(
     db: Session,
     user_id: int,
 ) -> list[Registration]:
-
     return (
         db.query(Registration)
         .filter(
@@ -101,7 +107,6 @@ def cancel_registration(
     event_id: int,
     user_id: int,
 ) -> Registration:
-
     # 1. Find the user's active registration
     registration = (
         db.query(Registration)
@@ -134,7 +139,6 @@ def get_event_registrations(
     event_id: int,
     organizer_id: int,
 ) -> list[Registration]:
-
     # 1. Check that the event exists
     event = (
         db.query(Event)
@@ -171,7 +175,6 @@ def get_event_stats(
     event_id: int,
     organizer_id: int,
 ) -> dict:
-
     # 1. Check that the event exists
     event = (
         db.query(Event)
@@ -214,12 +217,14 @@ def get_event_stats(
 
     # 5. Calculate total registrations
     total_registrations = (
-        active_registrations + cancelled_registrations
+        active_registrations
+        + cancelled_registrations
     )
 
     # 6. Calculate available seats
     available_seats = (
-        event.capacity - active_registrations
+        event.capacity
+        - active_registrations
     )
 
     return {
@@ -237,7 +242,6 @@ def get_registration_status(
     event_id: int,
     user_id: int,
 ) -> dict:
-
     # 1. Check that the event exists
     event = (
         db.query(Event)
@@ -263,7 +267,8 @@ def get_registration_status(
 
     # 3. Calculate available seats
     available_seats = (
-        event.capacity - active_registrations
+        event.capacity
+        - active_registrations
     )
 
     # 4. Get the user's latest registration
