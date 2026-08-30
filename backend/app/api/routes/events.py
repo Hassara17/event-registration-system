@@ -14,6 +14,7 @@ from app.schemas.event import (
     EventResponse,
     EventUpdate,
 )
+from app.schemas.event_detail import EventDetailResponse
 from app.schemas.event_stats import EventStatsResponse
 from app.schemas.registration import RegistrationResponse
 from app.schemas.registration_status import (
@@ -23,6 +24,7 @@ from app.services.event_service import (
     create_event,
     delete_event,
     get_event,
+    get_event_detail,
     get_events,
     update_event,
 )
@@ -149,6 +151,30 @@ def get_registration_status_endpoint(
         event_id=event_id,
         user_id=current_user.id,
     )
+
+
+@router.get(
+    "/{event_id}/details",
+    response_model=EventDetailResponse,
+)
+def get_event_detail_endpoint(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    event_detail = get_event_detail(
+        db=db,
+        event_id=event_id,
+        user_id=current_user.id,
+    )
+
+    if event_detail is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found",
+        )
+
+    return event_detail
 
 
 @router.get(

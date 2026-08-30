@@ -1,9 +1,10 @@
 from datetime import date, datetime, time, timedelta
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.event import Event
+from app.models.registration import Registration
 from app.schemas.event import EventCreate, EventUpdate
 
 
@@ -77,6 +78,7 @@ def get_events(
     # --------------------------------------------------
     # Search by title OR description
     # --------------------------------------------------
+
     if search:
         search_pattern = f"%{search}%"
 
@@ -90,6 +92,7 @@ def get_events(
     # --------------------------------------------------
     # Filter by venue
     # --------------------------------------------------
+
     if venue:
         statement = statement.where(
             Event.venue.ilike(f"%{venue}%")
@@ -98,6 +101,7 @@ def get_events(
     # --------------------------------------------------
     # Filter by event date
     # --------------------------------------------------
+
     if event_date:
         start_of_day = datetime.combine(
             event_date,
@@ -116,6 +120,7 @@ def get_events(
     # --------------------------------------------------
     # Sorting
     # --------------------------------------------------
+
     if sort_by == "title":
         sort_column = Event.title
 
@@ -123,13 +128,13 @@ def get_events(
         sort_column = Event.venue
 
     else:
-        # Default sorting
         sort_column = Event.start_date
 
     if sort_order.lower() == "desc":
         statement = statement.order_by(
             sort_column.desc()
         )
+
     else:
         statement = statement.order_by(
             sort_column.asc()
@@ -138,6 +143,7 @@ def get_events(
     # --------------------------------------------------
     # Pagination
     # --------------------------------------------------
+
     offset = (page - 1) * page_size
 
     statement = statement.offset(
@@ -151,6 +157,87 @@ def get_events(
     )
 
 
+def get_event_detail(
+    db: Session,
+    event_id: int,
+    user_id: int,
+) -> dict | None:
+    """
+    Return detailed event information for a user,
+    including available seats and the user's
+    registration status.
+    """
+
+    # 1. Get the event
+    event = get_event(
+        db=db,
+        event_id=event_id,
+    )
+
+    if event is None:
+        return None
+
+    # 2. Count active registrations
+    active_registrations = (
+        db.query(func.count(Registration.id))
+        .filter(
+            Registration.event_id == event_id,
+            Registration.status == "registered",
+        )
+        .scalar()
+    )
+
+    # 3. Calculate available seats
+    available_seats = (
+        event.capacity - active_registrations
+    )
+
+    # Prevent negative available seats
+    if available_seats < 0:
+        available_seats = 0
+
+    # 4. Get the user's latest registration
+    registration = (
+        db.query(Registration)
+        .filter(
+            Registration.event_id == event_id,
+            Registration.user_id == user_id,
+        )
+        .order_by(
+            Registration.id.desc()
+        )
+        .first()
+    )
+
+    # 5. Determine registration status
+    if registration is None:
+        registration_status = "not_registered"
+
+    elif registration.status == "registered":
+        registration_status = "registered"
+
+    elif registration.status == "cancelled":
+        registration_status = "cancelled"
+
+    else:
+        registration_status = registration.status
+
+    # 6. Return combined event details
+    return {
+        "id": event.id,
+        "title": event.title,
+        "description": event.description,
+        "venue": event.venue,
+        "start_date": event.start_date,
+        "end_date": event.end_date,
+        "capacity": event.capacity,
+        "available_seats": available_seats,
+        "is_published": event.is_published,
+        "organizer_id": event.organizer_id,
+        "registration_status": registration_status,
+    }
+
+
 def update_event(
     db: Session,
     event: Event,
@@ -161,7 +248,11 @@ def update_event(
     )
 
     for field, value in update_data.items():
-        setattr(event, field, value)
+        setattr(
+            event,
+            field,
+            value,
+        )
 
     db.commit()
     db.refresh(event)
@@ -175,3 +266,4 @@ def delete_event(
 ) -> None:
     db.delete(event)
     db.commit()
+
