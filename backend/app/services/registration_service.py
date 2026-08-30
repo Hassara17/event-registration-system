@@ -33,11 +33,14 @@ def create_registration(
             detail="Event is not published",
         )
 
-    # 3. Check that the event has not already started
+    # 3. Check that the event has not started
     if event.start_date <= datetime.now():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Registration is closed because the event has already started or passed",
+            detail=(
+                "Registration is closed because the event "
+                "has already started or passed"
+            ),
         )
 
     # 4. Check if the user has already registered
@@ -107,7 +110,30 @@ def cancel_registration(
     event_id: int,
     user_id: int,
 ) -> Registration:
-    # 1. Find the user's active registration
+    # 1. Check that the event exists
+    event = (
+        db.query(Event)
+        .filter(Event.id == event_id)
+        .first()
+    )
+
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found",
+        )
+
+    # 2. Check that the event has not started
+    if event.start_date <= datetime.now():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Registration cannot be cancelled because "
+                "the event has already started or passed"
+            ),
+        )
+
+    # 3. Find the user's active registration
     registration = (
         db.query(Registration)
         .filter(
@@ -118,14 +144,14 @@ def cancel_registration(
         .first()
     )
 
-    # 2. Registration doesn't exist
+    # 4. Registration doesn't exist
     if registration is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Registration not found",
         )
 
-    # 3. Cancel instead of deleting the record
+    # 5. Cancel instead of deleting the record
     registration.status = "cancelled"
 
     db.commit()
@@ -156,7 +182,10 @@ def get_event_registrations(
     if event.organizer_id != organizer_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only view registrations for your own events",
+            detail=(
+                "You can only view registrations "
+                "for your own events"
+            ),
         )
 
     # 3. Return active registrations
@@ -192,7 +221,10 @@ def get_event_stats(
     if event.organizer_id != organizer_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only view statistics for your own events",
+            detail=(
+                "You can only view statistics "
+                "for your own events"
+            ),
         )
 
     # 3. Count active registrations
