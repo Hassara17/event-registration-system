@@ -12,7 +12,7 @@ class EventDetailResponse(BaseModel):
     end_date: datetime
     capacity: int
     available_seats: int
-    is_published: bool
+    is_archived: bool
     organizer_id: int
     registration_status: str
 

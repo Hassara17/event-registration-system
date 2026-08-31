@@ -1,9 +1,19 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_validator,
+)
 
+
+# ============================================================
+# CREATE EVENT
+# ============================================================
 
 class EventCreate(BaseModel):
+
     title: str = Field(
         min_length=1,
         max_length=200,
@@ -17,6 +27,7 @@ class EventCreate(BaseModel):
     )
 
     start_date: datetime
+
     end_date: datetime
 
     capacity: int = Field(
@@ -27,6 +38,7 @@ class EventCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_dates(self):
+
         if self.end_date <= self.start_date:
             raise ValueError(
                 "end_date must be after start_date"
@@ -35,7 +47,12 @@ class EventCreate(BaseModel):
         return self
 
 
+# ============================================================
+# UPDATE EVENT
+# ============================================================
+
 class EventUpdate(BaseModel):
+
     title: str | None = Field(
         default=None,
         min_length=1,
@@ -51,6 +68,7 @@ class EventUpdate(BaseModel):
     )
 
     start_date: datetime | None = None
+
     end_date: datetime | None = None
 
     capacity: int | None = Field(
@@ -62,6 +80,7 @@ class EventUpdate(BaseModel):
 
     @model_validator(mode="after")
     def validate_dates(self):
+
         if (
             self.start_date is not None
             and self.end_date is not None
@@ -74,15 +93,30 @@ class EventUpdate(BaseModel):
         return self
 
 
+# ============================================================
+# EVENT RESPONSE
+# ============================================================
+
 class EventResponse(BaseModel):
+
     id: int
+
     title: str
+
     description: str | None
+
     venue: str
+
     start_date: datetime
+
     end_date: datetime
+
     capacity: int
+
     is_published: bool
+
+    is_archived: bool
+
     organizer_id: int
 
     model_config = ConfigDict(

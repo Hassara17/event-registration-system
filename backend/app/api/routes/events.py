@@ -8,30 +8,28 @@ from app.api.deps import (
     get_db,
     require_role,
 )
+
 from app.models.user import User
+
 from app.schemas.event import (
     EventCreate,
     EventResponse,
     EventUpdate,
 )
+
 from app.schemas.event_detail import EventDetailResponse
 from app.schemas.event_stats import EventStatsResponse
-from app.schemas.registration import RegistrationResponse
-from app.schemas.registration_status import (
-    RegistrationStatusResponse,
-)
+
 from app.services.event_service import (
+    archive_event,
     create_event,
     delete_event,
     get_event,
     get_event_detail,
-    get_events,
-    update_event,
-)
-from app.services.registration_service import (
-    get_event_registrations,
     get_event_stats,
-    get_registration_status,
+    get_events,
+    restore_event,
+    update_event,
 )
 
 
@@ -40,6 +38,10 @@ router = APIRouter(
     tags=["Events"],
 )
 
+
+# ============================================================
+# CREATE EVENT
+# ============================================================
 
 @router.post(
     "",
@@ -60,14 +62,27 @@ def create_event_endpoint(
     )
 
 
+# ============================================================
+# LIST EVENTS
+# ============================================================
+
 @router.get(
     "",
     response_model=list[EventResponse],
 )
 def list_events(
-    search: str | None = None,
-    venue: str | None = None,
-    event_date: date | None = None,
+    search: str | None = Query(
+        default=None,
+        description="Search event title or description",
+    ),
+    venue: str | None = Query(
+        default=None,
+        description="Filter by venue",
+    ),
+    event_date: date | None = Query(
+        default=None,
+        description="Filter by event start date",
+    ),
     page: int = Query(
         default=1,
         ge=1,
@@ -89,6 +104,37 @@ def list_events(
     ),
     db: Session = Depends(get_db),
 ):
+    # --------------------------------------------------------
+    # Validate sorting
+    # --------------------------------------------------------
+
+    allowed_sort_fields = {
+        "start_date",
+        "title",
+        "venue",
+    }
+
+    if sort_by not in allowed_sort_fields:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Invalid sort_by. Allowed values: "
+                "start_date, title, venue"
+            ),
+        )
+
+    if sort_order.lower() not in {
+        "asc",
+        "desc",
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Invalid sort_order. "
+                "Allowed values: asc, desc"
+            ),
+        )
+
     return get_events(
         db=db,
         search=search,
@@ -97,61 +143,13 @@ def list_events(
         page=page,
         page_size=page_size,
         sort_by=sort_by,
-        sort_order=sort_order,
+        sort_order=sort_order.lower(),
     )
 
 
-@router.get(
-    "/{event_id}/registrations",
-    response_model=list[RegistrationResponse],
-)
-def get_event_registrations_endpoint(
-    event_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(
-        require_role("organizer")
-    ),
-):
-    return get_event_registrations(
-        db=db,
-        event_id=event_id,
-        organizer_id=current_user.id,
-    )
-
-
-@router.get(
-    "/{event_id}/stats",
-    response_model=EventStatsResponse,
-)
-def get_event_stats_endpoint(
-    event_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(
-        require_role("organizer")
-    ),
-):
-    return get_event_stats(
-        db=db,
-        event_id=event_id,
-        organizer_id=current_user.id,
-    )
-
-
-@router.get(
-    "/{event_id}/registration-status",
-    response_model=RegistrationStatusResponse,
-)
-def get_registration_status_endpoint(
-    event_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    return get_registration_status(
-        db=db,
-        event_id=event_id,
-        user_id=current_user.id,
-    )
-
+# ============================================================
+# GET EVENT DETAILS
+# ============================================================
 
 @router.get(
     "/{event_id}/details",
@@ -177,6 +175,146 @@ def get_event_detail_endpoint(
     return event_detail
 
 
+# ============================================================
+# GET EVENT STATISTICS
+# ============================================================
+
+@router.get(
+    "/{event_id}/stats",
+    response_model=EventStatsResponse,
+)
+def get_event_stats_endpoint(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role("organizer")
+    ),
+):
+    event = get_event(
+        db=db,
+        event_id=event_id,
+    )
+
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found",
+        )
+
+    # --------------------------------------------------------
+    # Only the event owner can view statistics
+    # --------------------------------------------------------
+
+    if event.organizer_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "You can only view statistics "
+                "for your own events"
+            ),
+        )
+
+    return get_event_stats(
+        db=db,
+        event_id=event_id,
+        organizer_id=current_user.id,
+    )
+
+
+# ============================================================
+# ARCHIVE EVENT
+# ============================================================
+
+@router.post(
+    "/{event_id}/archive",
+    response_model=EventResponse,
+)
+def archive_event_endpoint(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role("organizer")
+    ),
+):
+    event = get_event(
+        db=db,
+        event_id=event_id,
+    )
+
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found",
+        )
+
+    # --------------------------------------------------------
+    # Ownership check
+    # --------------------------------------------------------
+
+    if event.organizer_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "You can only archive "
+                "your own events"
+            ),
+        )
+
+    return archive_event(
+        db=db,
+        event=event,
+    )
+
+
+# ============================================================
+# RESTORE EVENT
+# ============================================================
+
+@router.post(
+    "/{event_id}/restore",
+    response_model=EventResponse,
+)
+def restore_event_endpoint(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role("organizer")
+    ),
+):
+    event = get_event(
+        db=db,
+        event_id=event_id,
+    )
+
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found",
+        )
+
+    # --------------------------------------------------------
+    # Ownership check
+    # --------------------------------------------------------
+
+    if event.organizer_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "You can only restore "
+                "your own events"
+            ),
+        )
+
+    return restore_event(
+        db=db,
+        event=event,
+    )
+
+
+# ============================================================
+# GET SINGLE EVENT
+# ============================================================
+
 @router.get(
     "/{event_id}",
     response_model=EventResponse,
@@ -186,8 +324,8 @@ def get_event_endpoint(
     db: Session = Depends(get_db),
 ):
     event = get_event(
-        db,
-        event_id,
+        db=db,
+        event_id=event_id,
     )
 
     if event is None:
@@ -198,6 +336,10 @@ def get_event_endpoint(
 
     return event
 
+
+# ============================================================
+# UPDATE EVENT
+# ============================================================
 
 @router.patch(
     "/{event_id}",
@@ -212,8 +354,8 @@ def update_event_endpoint(
     ),
 ):
     event = get_event(
-        db,
-        event_id,
+        db=db,
+        event_id=event_id,
     )
 
     if event is None:
@@ -222,10 +364,17 @@ def update_event_endpoint(
             detail="Event not found",
         )
 
+    # --------------------------------------------------------
+    # Ownership check
+    # --------------------------------------------------------
+
     if event.organizer_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only modify your own events",
+            detail=(
+                "You can only modify "
+                "your own events"
+            ),
         )
 
     return update_event(
@@ -234,6 +383,10 @@ def update_event_endpoint(
         event_data=event_data,
     )
 
+
+# ============================================================
+# DELETE EVENT
+# ============================================================
 
 @router.delete(
     "/{event_id}",
@@ -247,8 +400,8 @@ def delete_event_endpoint(
     ),
 ):
     event = get_event(
-        db,
-        event_id,
+        db=db,
+        event_id=event_id,
     )
 
     if event is None:
@@ -257,10 +410,17 @@ def delete_event_endpoint(
             detail="Event not found",
         )
 
+    # --------------------------------------------------------
+    # Ownership check
+    # --------------------------------------------------------
+
     if event.organizer_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only delete your own events",
+            detail=(
+                "You can only delete "
+                "your own events"
+            ),
         )
 
     delete_event(
