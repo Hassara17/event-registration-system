@@ -71,3 +71,40 @@ def create_user(
         "role": user.role,
         "is_active": user.is_active,
     }
+
+# ============================================================
+# GET CHECK-IN STAFF
+# Organizer only
+# ============================================================
+
+@router.get("/staff")
+def get_checkin_staff(
+    db: Annotated[
+        Session,
+        Depends(get_db),
+    ],
+    current_user: Annotated[
+        User,
+        Depends(require_organizer),
+    ],
+):
+    staff_users = (
+        db.query(User)
+        .filter(
+            User.role == "checkin_staff",
+            User.is_active == True,
+        )
+        .order_by(User.name.asc())
+        .all()
+    )
+
+    return [
+        {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+            "is_active": user.is_active,
+        }
+        for user in staff_users
+    ]

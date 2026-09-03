@@ -1,0 +1,393 @@
+/* =========================================================
+   MY REGISTRATIONS PAGE
+   ========================================================= */
+
+.page-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+/* =========================================================
+   PAGE HEADER
+   ========================================================= */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.page-header h1 {
+  margin: 0 0 8px;
+  font-size: 30px;
+  font-weight: 750;
+  color: #111827;
+}
+
+.page-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.primary-button,
+.secondary-button,
+.danger-button {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.primary-button {
+  background: #2563eb;
+  color: white;
+}
+
+.primary-button:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.secondary-button {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.secondary-button:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.danger-button {
+  background: #dc2626;
+  color: white;
+}
+
+.danger-button:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.danger-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =========================================================
+   ERROR MESSAGE
+   ========================================================= */
+
+.error-message {
+  margin-bottom: 24px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+/* =========================================================
+   LOADING / EMPTY STATES
+   ========================================================= */
+
+.loading-state,
+.empty-state {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.loading-state {
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.empty-state h2 {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 22px;
+}
+
+.empty-state p {
+  margin: 0 0 24px;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+/* =========================================================
+   REGISTRATION LIST
+   ========================================================= */
+
+.registrations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* =========================================================
+   REGISTRATION CARD
+   ========================================================= */
+
+.registration-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.registration-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+  transform: translateY(-2px);
+}
+
+/* =========================================================
+   CARD HEADER
+   ========================================================= */
+
+.registration-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.registration-card-header h2 {
+  margin: 0 0 6px;
+  color: #111827;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.registration-card-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* =========================================================
+   STATUS BADGES
+   ========================================================= */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Reserved */
+
+.status-reserved {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Confirmed */
+
+.status-confirmed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* Checked In */
+
+.status-checked-in {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Cancelled */
+
+.status-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Expired */
+
+.status-expired {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+/* =========================================================
+   REGISTRATION DETAILS
+   ========================================================= */
+
+.registration-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  padding: 6px 24px;
+}
+
+.registration-detail {
+  min-width: 0;
+  padding: 16px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.registration-detail:nth-child(3n + 1) {
+  padding-left: 0;
+}
+
+.registration-detail:nth-child(3n) {
+  padding-right: 0;
+}
+
+.registration-detail span {
+  display: block;
+  margin-bottom: 5px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.registration-detail strong {
+  display: block;
+  overflow: hidden;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   CARD ACTIONS
+   ========================================================= */
+
+.registration-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 24px;
+  background: #fafafa;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* =========================================================
+   RESPONSIVE DESIGN
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .page-container {
+    padding: 24px;
+  }
+
+  .registration-details {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .registration-detail:nth-child(3n + 1),
+  .registration-detail:nth-child(3n) {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .registration-detail:nth-child(2n + 1) {
+    padding-left: 0;
+  }
+
+  .registration-detail:nth-child(2n) {
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 650px) {
+  .page-container {
+    padding: 18px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .page-header h1 {
+    font-size: 25px;
+  }
+
+  .page-header .secondary-button {
+    width: 100%;
+  }
+
+  .registration-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px;
+  }
+
+  .registration-card-header h2 {
+    font-size: 18px;
+  }
+
+  .registration-details {
+    grid-template-columns: 1fr;
+    padding: 6px 18px;
+  }
+
+  .registration-detail,
+  .registration-detail:nth-child(3n + 1),
+  .registration-detail:nth-child(3n),
+  .registration-detail:nth-child(2n + 1),
+  .registration-detail:nth-child(2n) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .registration-detail strong {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .registration-actions {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 18px;
+  }
+
+  .registration-actions button {
+    width: 100%;
+  }
+}
+

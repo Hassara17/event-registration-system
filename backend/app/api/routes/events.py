@@ -75,33 +75,48 @@ def list_events(
         default=None,
         description="Search event title or description",
     ),
+
     venue: str | None = Query(
         default=None,
         description="Filter by venue",
     ),
+
     event_date: date | None = Query(
         default=None,
         description="Filter by event start date",
     ),
+
+    archived: bool = Query(
+        default=False,
+        description=(
+            "False = active events, "
+            "True = archived events"
+        ),
+    ),
+
     page: int = Query(
         default=1,
         ge=1,
         description="Page number",
     ),
+
     page_size: int = Query(
         default=10,
         ge=1,
         le=100,
         description="Number of events per page",
     ),
+
     sort_by: str = Query(
         default="start_date",
         description="Sort field: start_date, title, venue",
     ),
+
     sort_order: str = Query(
         default="asc",
         description="Sort order: asc or desc",
     ),
+
     db: Session = Depends(get_db),
 ):
     # --------------------------------------------------------
@@ -135,6 +150,10 @@ def list_events(
             ),
         )
 
+    # --------------------------------------------------------
+    # Get events
+    # --------------------------------------------------------
+
     return get_events(
         db=db,
         search=search,
@@ -144,6 +163,7 @@ def list_events(
         page_size=page_size,
         sort_by=sort_by,
         sort_order=sort_order.lower(),
+        archived=archived,
     )
 
 
@@ -160,6 +180,7 @@ def get_event_detail_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+
     event_detail = get_event_detail(
         db=db,
         event_id=event_id,
@@ -190,6 +211,7 @@ def get_event_stats_endpoint(
         require_role("organizer")
     ),
 ):
+
     event = get_event(
         db=db,
         event_id=event_id,
@@ -200,10 +222,6 @@ def get_event_stats_endpoint(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found",
         )
-
-    # --------------------------------------------------------
-    # Only the event owner can view statistics
-    # --------------------------------------------------------
 
     if event.organizer_id != current_user.id:
         raise HTTPException(
@@ -236,6 +254,7 @@ def archive_event_endpoint(
         require_role("organizer")
     ),
 ):
+
     event = get_event(
         db=db,
         event_id=event_id,
@@ -246,10 +265,6 @@ def archive_event_endpoint(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found",
         )
-
-    # --------------------------------------------------------
-    # Ownership check
-    # --------------------------------------------------------
 
     if event.organizer_id != current_user.id:
         raise HTTPException(
@@ -281,6 +296,7 @@ def restore_event_endpoint(
         require_role("organizer")
     ),
 ):
+
     event = get_event(
         db=db,
         event_id=event_id,
@@ -291,10 +307,6 @@ def restore_event_endpoint(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found",
         )
-
-    # --------------------------------------------------------
-    # Ownership check
-    # --------------------------------------------------------
 
     if event.organizer_id != current_user.id:
         raise HTTPException(
@@ -323,6 +335,7 @@ def get_event_endpoint(
     event_id: int,
     db: Session = Depends(get_db),
 ):
+
     event = get_event(
         db=db,
         event_id=event_id,
@@ -353,6 +366,7 @@ def update_event_endpoint(
         require_role("organizer")
     ),
 ):
+
     event = get_event(
         db=db,
         event_id=event_id,
@@ -363,10 +377,6 @@ def update_event_endpoint(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found",
         )
-
-    # --------------------------------------------------------
-    # Ownership check
-    # --------------------------------------------------------
 
     if event.organizer_id != current_user.id:
         raise HTTPException(
@@ -399,6 +409,7 @@ def delete_event_endpoint(
         require_role("organizer")
     ),
 ):
+
     event = get_event(
         db=db,
         event_id=event_id,
@@ -409,10 +420,6 @@ def delete_event_endpoint(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found",
         )
-
-    # --------------------------------------------------------
-    # Ownership check
-    # --------------------------------------------------------
 
     if event.organizer_id != current_user.id:
         raise HTTPException(

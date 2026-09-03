@@ -75,18 +75,24 @@ def get_events(
     page_size: int = 10,
     sort_by: str = "start_date",
     sort_order: str = "asc",
+    archived: bool = False,
 ) -> list[Event]:
     """
-    Return active (non-archived) events with
-    filtering, pagination, and sorting.
+    Return events filtered by archive status.
+
+    archived=False:
+        Return active events.
+
+    archived=True:
+        Return archived events.
     """
 
     # --------------------------------------------------------
-    # Only show non-archived events
+    # Archive filter
     # --------------------------------------------------------
 
     statement = select(Event).where(
-        Event.is_archived.is_(False)
+        Event.is_archived.is_(archived)
     )
 
     # --------------------------------------------------------
@@ -185,12 +191,6 @@ def get_event_detail(
     event_id: int,
     user_id: int,
 ) -> dict | None:
-    """
-    Return detailed event information.
-
-    Archived events are not returned through
-    the normal event-detail view.
-    """
 
     event = get_event(
         db=db,
@@ -201,7 +201,7 @@ def get_event_detail(
         return None
 
     # --------------------------------------------------------
-    # Archived events are hidden from normal views
+    # Archived events are hidden from normal detail view
     # --------------------------------------------------------
 
     if event.is_archived:
@@ -257,11 +257,8 @@ def get_event_detail(
     )
 
     if user_registration is None:
-
         registration_status = "not_registered"
-
     else:
-
         registration_status = "registered"
 
     # --------------------------------------------------------
@@ -292,9 +289,6 @@ def get_event_stats(
     event_id: int,
     organizer_id: int,
 ) -> dict:
-    """
-    Return registration statistics for an event.
-    """
 
     event = get_event(
         db=db,
@@ -302,18 +296,12 @@ def get_event_stats(
     )
 
     if event is None:
-
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found",
         )
 
-    # --------------------------------------------------------
-    # Verify organizer ownership
-    # --------------------------------------------------------
-
     if event.organizer_id != organizer_id:
-
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=(
@@ -321,10 +309,6 @@ def get_event_stats(
                 "for your own events"
             ),
         )
-
-    # --------------------------------------------------------
-    # Total registrations
-    # --------------------------------------------------------
 
     total_registrations = (
         db.query(func.count(Registration.id))
@@ -338,10 +322,6 @@ def get_event_stats(
         .scalar()
         or 0
     )
-
-    # --------------------------------------------------------
-    # Active registrations
-    # --------------------------------------------------------
 
     active_registrations = (
         db.query(func.count(Registration.id))
@@ -359,10 +339,6 @@ def get_event_stats(
         or 0
     )
 
-    # --------------------------------------------------------
-    # Cancelled registrations
-    # --------------------------------------------------------
-
     cancelled_registrations = (
         db.query(func.count(Registration.id))
         .join(
@@ -376,10 +352,6 @@ def get_event_stats(
         .scalar()
         or 0
     )
-
-    # --------------------------------------------------------
-    # Available seats
-    # --------------------------------------------------------
 
     available_seats = max(
         event.capacity - active_registrations,
@@ -405,17 +377,10 @@ def update_event(
     event: Event,
     event_data: EventUpdate,
 ) -> Event:
-    """
-    Update event information.
-    """
 
     update_data = event_data.model_dump(
         exclude_unset=True
     )
-
-    # --------------------------------------------------------
-    # Validate dates
-    # --------------------------------------------------------
 
     new_start_date = update_data.get(
         "start_date",
@@ -428,15 +393,10 @@ def update_event(
     )
 
     if new_end_date <= new_start_date:
-
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="end_date must be after start_date",
         )
-
-    # --------------------------------------------------------
-    # Validate capacity
-    # --------------------------------------------------------
 
     if "capacity" in update_data:
 
@@ -460,7 +420,6 @@ def update_event(
         )
 
         if new_capacity < active_registrations:
-
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
@@ -470,33 +429,18 @@ def update_event(
                 ),
             )
 
-    # --------------------------------------------------------
-    # Clean string values
-    # --------------------------------------------------------
-
     if "title" in update_data:
-
         update_data["title"] = (
             update_data["title"].strip()
         )
 
     if "venue" in update_data:
-
         update_data["venue"] = (
             update_data["venue"].strip()
         )
 
-    # --------------------------------------------------------
-    # Apply updates
-    # --------------------------------------------------------
-
     for field, value in update_data.items():
-
-        setattr(
-            event,
-            field,
-            value,
-        )
+        setattr(event, field, value)
 
     db.commit()
     db.refresh(event)
@@ -512,14 +456,8 @@ def archive_event(
     db: Session,
     event: Event,
 ) -> Event:
-    """
-    Archive an event without deleting it.
-
-    Sessions and registrations remain intact.
-    """
 
     if event.is_archived:
-
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Event is already archived",
@@ -541,12 +479,8 @@ def restore_event(
     db: Session,
     event: Event,
 ) -> Event:
-    """
-    Restore a previously archived event.
-    """
 
     if not event.is_archived:
-
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Event is already active",
@@ -568,13 +502,6 @@ def delete_event(
     db: Session,
     event: Event,
 ) -> None:
-    """
-    Permanently delete an event.
-
-    Note:
-    Archive/restore is the normal lifecycle.
-    Delete remains available for the existing API.
-    """
 
     db.delete(event)
     db.commit()
