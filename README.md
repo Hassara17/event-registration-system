@@ -516,7 +516,7 @@ The backend CORS configuration allows the frontend to communicate from:
 
 ```text
 http://localhost:5173
-http://127.0.0.1:5173
+http://127.0.0.1:8000/docs
 ```
 
 ---
