@@ -26,10 +26,9 @@ config = context.config
 
 config.set_main_option(
     "sqlalchemy.url",
-    settings.database_url,
+    settings.database_url.replace("%", "%%"),
+
 )
-
-
 # ============================================================
 # LOGGING
 # ============================================================

@@ -3,6 +3,7 @@
 Revision ID: 4f0f7833ff9d
 Revises: 2d555afb76de
 Create Date: 2026-08-30
+
 """
 
 from typing import Sequence, Union
@@ -66,7 +67,11 @@ def upgrade() -> None:
     )
 
     # ---------------------------------------------------------
-    # 2. Add new registration columns as NULLABLE first
+    # 2. Add registration columns
+    # ---------------------------------------------------------
+    #
+    # These are initially nullable so that existing
+    # registrations can be migrated safely.
     # ---------------------------------------------------------
 
     op.add_column(
@@ -124,20 +129,41 @@ def upgrade() -> None:
     )
 
     # ---------------------------------------------------------
-    # 3. Fill existing records
+    # 3. Add session_id
+    # ---------------------------------------------------------
+    #
+    # Existing registrations may not have a session.
+    # Therefore session_id is initially nullable.
+    #
+    # New registrations are required to provide a session
+    # by the application/business logic.
+    # ---------------------------------------------------------
+
+    op.add_column(
+        "registrations",
+        sa.Column(
+            "session_id",
+            sa.Integer(),
+            nullable=True,
+        ),
+    )
+
+    # ---------------------------------------------------------
+    # 4. Fill existing registration records
     # ---------------------------------------------------------
     #
     # Existing registrations already have:
-    #   user_id
-    #   registered_at
-    #   status
+    #   - user_id
+    #   - registered_at
+    #   - status
     #
-    # We use registered_at as reserved_at.
+    # Use registered_at as reserved_at.
     #
-    # attendee_name/email are temporarily populated with
-    # safe placeholder values.
+    # Since attendee_name/email did not previously exist,
+    # provide safe placeholder values for existing rows.
     #
-    # This allows the migration to succeed.
+    # session_id intentionally remains NULL for old records
+    # because there may not be a valid session to associate.
     # ---------------------------------------------------------
 
     op.execute(
@@ -154,7 +180,7 @@ def upgrade() -> None:
     )
 
     # ---------------------------------------------------------
-    # 4. Set columns to NOT NULL after existing rows are fixed
+    # 5. Make required registration fields NOT NULL
     # ---------------------------------------------------------
 
     op.alter_column(
@@ -179,23 +205,7 @@ def upgrade() -> None:
     )
 
     # ---------------------------------------------------------
-    # 5. session_id becomes required
-    # ---------------------------------------------------------
-    #
-    # IMPORTANT:
-    # Existing registrations currently have session_id NULL.
-    #
-    # We cannot safely make session_id NOT NULL until every
-    # existing registration has a valid session.
-    #
-    # Therefore, leave it nullable for this migration.
-    #
-    # New registrations can still require session_id at the
-    # application level.
-    # ---------------------------------------------------------
-
-    # ---------------------------------------------------------
-    # 6. Create indexes
+    # 6. Create registration indexes
     # ---------------------------------------------------------
 
     op.create_index(
@@ -237,10 +247,8 @@ def upgrade() -> None:
     # 7. Add session foreign key
     # ---------------------------------------------------------
     #
-    # Existing event_id is kept for now so we don't lose data.
-    #
-    # Once existing registrations are migrated to sessions,
-    # event_id can be removed in a later migration.
+    # session_id remains nullable for legacy registrations.
+    # New registrations should always have a valid session.
     # ---------------------------------------------------------
 
     op.create_foreign_key(
@@ -264,14 +272,20 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Remove foreign key
+    # ---------------------------------------------------------
+    # 1. Remove registration-session foreign key
+    # ---------------------------------------------------------
+
     op.drop_constraint(
         "fk_registrations_session_id_sessions",
         "registrations",
         type_="foreignkey",
     )
 
-    # Remove indexes
+    # ---------------------------------------------------------
+    # 2. Remove registration indexes
+    # ---------------------------------------------------------
+
     op.drop_index(
         "ix_registrations_user_id",
         table_name="registrations",
@@ -297,7 +311,19 @@ def downgrade() -> None:
         table_name="registrations",
     )
 
-    # Remove new registration columns
+    # ---------------------------------------------------------
+    # 3. Remove session_id
+    # ---------------------------------------------------------
+
+    op.drop_column(
+        "registrations",
+        "session_id",
+    )
+
+    # ---------------------------------------------------------
+    # 4. Remove registration columns
+    # ---------------------------------------------------------
+
     op.drop_column(
         "registrations",
         "cancelled_at",
@@ -328,13 +354,19 @@ def downgrade() -> None:
         "attendee_name",
     )
 
-    # Remove events index
+    # ---------------------------------------------------------
+    # 5. Remove events index
+    # ---------------------------------------------------------
+
     op.drop_index(
         "ix_events_organizer_id",
         table_name="events",
     )
 
-    # Remove sessions indexes/table
+    # ---------------------------------------------------------
+    # 6. Remove sessions indexes
+    # ---------------------------------------------------------
+
     op.drop_index(
         "ix_sessions_event_id",
         table_name="sessions",
@@ -344,5 +376,9 @@ def downgrade() -> None:
         "ix_sessions_id",
         table_name="sessions",
     )
+
+    # ---------------------------------------------------------
+    # 7. Remove sessions table
+    # ---------------------------------------------------------
 
     op.drop_table("sessions")
