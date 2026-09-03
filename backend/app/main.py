@@ -29,7 +29,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://event-registration-system-hassan-20f1.vercel.app",
+        "https://event-registration-system-g303ykami-hassan-20f1.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
