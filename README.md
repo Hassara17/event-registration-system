@@ -1,191 +1,896 @@
-# Assignment 12 — Event Registration
+# README.md
 
-## The scenario
+````md
+# Event Registration System
 
-Picture an organization running multi-day conferences and workshops — a handful of sessions each
-with a fixed room capacity, spread across one or more events a year. Right now sign-ups happen over
-email, a shared spreadsheet gets updated by whoever answers the message first, and how many seats
-are actually left in a popular session is whatever the last person to edit the sheet believes.
+A full-stack event registration and session management system built with a **React + Vite frontend** and a **FastAPI backend**.
 
-The result is predictable. Two people register around the same time for a session with one seat
-left, the spreadsheet gets updated twice, and the room ends up with more attendees than chairs. A
-seat gets reserved by someone who never follows through, and because nobody frees it, that seat stays
-lost to everyone else who wanted it. On the day itself, front-of-house has no reliable way to tell who
-has actually walked in versus who merely signed up weeks ago and forgot.
-
-They want one system: organizers set up events and their sessions with a real seat capacity,
-check-in staff manage the door on the day, and a reservation nobody confirms in time frees itself
-back up automatically instead of sitting on the books forever. Anyone should be able to trust that a
-session marked full really is full. That is the system you are building.
-
-## What it must do
-
-Everything below is required. Several of the ten spell out exact rules — what happens on an illegal
-move, what a bulk action must report back, when a dismissed alert is allowed to reappear — and those
-specifics are the actual ask, not just the bold headline in front of them.
-
-1. **Accounts and roles.** People sign in with an email and password, and there are at least two
-roles — an organizer role and a check-in staff role. Organizers create and archive events, create
-sessions within an event and set each session's capacity, and can create, confirm, cancel and check
-in registrations for any session. Check-in staff can do the same only for sessions they are assigned
-to, and cannot create events, create sessions, or change a session's capacity. The difference must be
-enforced on the server, not just hidden in the interface.
-
-2. **Events.** Organizers create events with a name, a description, a start date, an end date, and a
-venue, and can edit them later. Events can be archived and restored. Archiving hides an event from
-the default views without destroying its sessions or registrations.
-
-3. **Sessions inside events.** Every session belongs to exactly one event and carries a title, a
-start time, a duration, a location within the venue, and a seat capacity. Sessions can be created,
-edited, and deleted by organizers. Opening an event shows its sessions.
-
-4. **A registration lifecycle with rules.** Each registration records an attendee's name and email
-address for one session, and moves through *Reserved → Confirmed → Checked In*. Reserving a seat
-requires room left in the session's capacity, counted as its Reserved, Confirmed and Checked In
-registrations together; once that count reaches capacity, the server refuses any further reservation
-rather than overselling the session. A reservation left Reserved for longer than a set holding window
-is automatically marked *Expired*, freeing the seat it held. A registration can be marked *Cancelled*
-from Reserved or Confirmed, which also frees the seat, but not once it is Checked In. Any other move
-must be rejected by the server with a message explaining why.
-
-5. **Assignment.** Any number of check-in staff can be assigned to a session, and a staff member can
-be assigned to any number of sessions across any event. Only an organizer can add or remove a staff
-assignment. Every check-in staff member can see one list of every session they are assigned to.
-
-6. **Finding registrations.** One list shows registrations across every session the viewer can see,
-with a text search over attendee name and email, filters for event, session and status, sorting by
-reserved time, status or session, and pagination showing the total number of matches. All of this
-must happen on the server — do not load every registration into the browser and filter there.
-
-7. **Acting on many attendees at once.** Organizers can bulk-import an attendee list from a CSV file
-into a session's registrations. The result is a per-row report: a row is created as a new
-reservation, counted as a duplicate if that email is already registered for the session, or rejected
-as invalid with a reason, and valid rows are still created even when others in the same file are
-rejected. Separately, export a session's check-in sheet — every registered attendee and their status
-— as a CSV file.
-
-8. **A dashboard.** A landing view shows headline numbers — sessions today, attendees checked in
-today, registrations expired this week, and sessions currently at capacity. It also breaks
-registrations down by status and by session, and charts check-ins per day over the last fourteen
-days.
-
-9. **History you cannot rewrite.** Every registration has a timeline showing when it was created,
-every status change with the old and new status and who made it, and any notes staff leave about it.
-Nothing in this timeline can be edited or deleted after the fact, including by organizers.
-
-10. **At-capacity alerts.** A session that reaches its full seat capacity appears in an alerts area,
-with a count badge visible in the navigation. An organizer can dismiss the alert for that session. If
-a later cancellation or expiry frees a seat and the session then fills back up to capacity, the alert
-returns.
-
-## Stretch ideas (optional)
-
-None of these are required, and none substitute for a goal above. If you finish all ten with time
-left over, pick whichever of these sounds most useful and build it:
-
-- QR-code badges for faster check-in.
-- A waitlist for sessions at capacity.
-- Speaker and topic management per session.
-- Automated email confirmations and reminders.
-- A multi-track schedule builder with conflict detection.
-- A public event page for self-service registration.
-- Sponsor or exhibitor booth management.
-- Post-session feedback surveys.
-- Multiple ticket types with different pricing.
-
+The system supports multiple user roles, event and session management, registration lifecycle management, staff assignment, CSV import/export, dashboards, registration history, and capacity alerts.
 
 ---
 
-## What we are assessing
+## Features
 
-A working application is table stakes. Almost every serious candidate will produce something that runs, has a login, and roughly does what was asked. That's the floor, not the differentiator.
+### 1. Authentication & Role Management
 
-What actually separates submissions is the record of thinking behind the app: the decisions you made and why, the trade-offs you weighed, what you built first and what you deliberately left out, and whether you can explain any part of your own system when asked. We are hiring for judgement. The app is the evidence for that judgement, not the deliverable in itself.
+The application supports three roles:
 
-We also read the code itself for structure and readability, which counts for a small share of the overall score.
+- **Organizer**
+- **Check-in Staff**
+- **Attendee**
 
-## Time budget
+Authentication is handled using JWT-based authentication.
 
-Budget about 12 hours total, spent roughly 2 hours a day across a week.
+#### Organizer
 
-This is not a race. We are not timing you against other candidates, and submitting early scores nothing extra. Twelve hours is a size guide so you know how much to attempt — pace yourself, stop when you're tired, and spend some of that time thinking and documenting, not only typing code.
+Organizers can:
 
-## Pick any stack you like
+- Create events
+- Edit events
+- Archive and restore events
+- Create sessions
+- Edit sessions
+- Delete sessions
+- Set session capacity
+- Create registrations
+- Confirm registrations
+- Cancel registrations
+- Check in attendees
+- Import registrations using CSV
+- Export session check-in sheets
+- Assign check-in staff to sessions
+- Remove staff from sessions
+- View registration statistics
+- View registration history
+- Manage capacity alerts
 
-Use any language, any framework, any UI library, any ORM, and any database access approach you want. We have no house stack, and no stack scores better than another — this round is not a test of whether you know particular tools.
+#### Check-in Staff
 
-Use whatever you are fastest and most confident in. Time spent learning something new to impress us is time not spent on the ten goals above, and it will show.
+Check-in staff can:
 
-## Using AI is allowed and encouraged
+- View assigned sessions
+- View registrations for assigned sessions
+- Confirm registrations
+- Cancel registrations
+- Check in attendees
+- View session information
 
-Use AI tools however you want — to scaffold code, debug a stuck problem, write tests, draft documentation, or anything else that helps you move faster. A few things to know about how we treat it:
+They cannot:
 
-- We do not penalise AI use, and we make no attempt to detect it.
-- We care about whether you understood, directed and verified the output — not about who or what produced the first draft of it.
-- `docs/ai-prompts.md` must contain the prompts you actually used, including the ones that produced bad output and what you changed afterwards. If you used no AI at all, say so here and describe how you worked instead — that is assessed the same way.
-- Submitting generated code you cannot explain is the single most common way candidates fail this round.
+- Create events
+- Create sessions
+- Change session capacity
+- Assign staff
 
-You are accountable for everything in your submission. If a reviewer points at a piece of code and asks why it's there, or why it works the way it does, "the AI wrote it" is not an answer.
+#### Attendee
 
-## Use git properly
+Attendees can:
 
-Publish to a public GitHub repository, and commit incrementally as the work actually happens — after each meaningful step, not in one pass at the end.
+- Register/login
+- View events
+- View sessions
+- Register for sessions
+- View their registrations
+- Cancel eligible registrations
+- View their registration history
+- View their profile
 
-A repository whose entire history is a single "initial commit" containing a finished app scores zero on git history, and it colours how we read everything else in your submission, however good the app itself is. Your history is how we see the order you built in, where you got stuck, and how the design changed along the way. If it isn't there, we can't assess it, and we won't assume the best.
+---
 
-## What you must commit
+# Registration Lifecycle
 
-Alongside your code, commit these five files under `docs/`. Your zip includes a stub for each with the questions it needs to answer — fill them in as you go, not from memory at the end.
+Registrations follow the lifecycle:
 
-| File | What it must answer |
-|------|----------------------|
-| `docs/architecture.md` | What the moving pieces are, how they talk to each other, where each one runs, the request path for one representative user action end to end, and what you decided not to build. |
-| `docs/schema.md` | Every table's columns and types, which relationships are one-to-many versus many-to-many, which constraints live in the database versus the application, what you deliberately denormalised, and what would break first at 100x the data. |
-| `docs/plan.md` | How you split the work into sessions, what order you built in and why, what you estimated versus what it actually took, and what you cut when you ran short. |
-| `docs/decisions.md` | At least five real decisions — what you chose, what you rejected, and why — including at least one you later reversed. |
-| `docs/ai-prompts.md` | The prompts you actually used, in order, grouped by what you were trying to do, including at least one that produced something wrong and what you did about it. |
+```text
+Reserved
+    |
+    +------> Cancelled
+    |
+    +------> Expired
+    |
+    v
+Confirmed
+    |
+    +------> Cancelled
+    |
+    v
+Checked In
+````
 
-## Host it for free
+### Rules
 
-Deploy the whole thing somewhere reachable by URL, using free tiers only.
+* `Reserved`, `Confirmed`, and `Checked In` count toward session capacity.
+* A session cannot exceed its configured capacity.
+* Reserved registrations can expire after the holding period.
+* Reserved registrations can be cancelled.
+* Confirmed registrations can be cancelled.
+* Checked-in registrations cannot be cancelled.
+* Invalid state transitions are rejected by the backend.
+* Registration history is immutable.
 
-One combination that works, if you would rather not decide:
+---
 
-- **Database** — a managed service such as Supabase.
-- **Server-side code** — Render.
-- **Browser-side code** — Vercel.
+# Event Management
 
-Deploy in that order: create the database first, give the server its connection details as environment variables, then point the browser-side part at the server's public URL.
+An event contains:
 
-This is one option, not a requirement. Any free host is equally acceptable — everything on a single provider, one virtual machine, a container platform, a static host with serverless functions. The choice earns and loses nothing.
+* Title
+* Description
+* Start date
+* End date
+* Venue
+* Organizer
+* Archive status
 
-Requirements:
+Events can be:
 
-- A working live URL.
-- Seeded with enough demo data to show the system doing something, not an empty shell.
-- Demo credentials for every role recorded in `SUBMISSION.md`.
-- Connection strings, keys and passwords kept in environment variables, never in the repository.
-- Free tiers often sleep when idle and can take a minute or more to wake. Note it in `SUBMISSION.md` if yours does, so a slow first load is not read as a broken deployment.
-- If you cannot get it hosted, submit anyway and record in `SUBMISSION.md` what you tried and where it broke.
+* Created
+* Updated
+* Archived
+* Restored
+* Deleted
 
-## How to submit
+Archived events are hidden from normal views while their sessions and registrations remain stored.
 
-Send us:
+---
 
-- The URL of your public GitHub repository.
-- The URL of your live, deployed application.
-- Your completed `SUBMISSION.md`, committed to the repository.
+# Session Management
 
-That's the whole submission. Nothing else to prepare, no separate form.
+Each session belongs to an event.
 
-## What happens next
+A session contains:
 
-If your submission clears the bar, we'll set up a short call. We will ask about specific decisions we can see in your repository and its history — why you modelled something a particular way, what a certain commit was fixing, what you'd change if you kept going.
+* Event
+* Title
+* Start time
+* Duration
+* Location
+* Capacity
 
-We're telling you this now because it should change how carefully you document as you go. Write `docs/decisions.md` for a version of yourself who has to explain it three weeks from now.
+Organizers can create, update, and delete sessions.
 
-## Scope
+The system also provides session-level:
 
-The 10 goals stated in this brief are the cutoff. Meet all 10, solidly, and you have a complete submission.
+* Registration statistics
+* Registration management
+* Staff assignment
+* CSV import
+* CSV export
 
-Stretch ideas are optional. They exist for candidates who finish the 10 with time left and want to keep building — they are never required, and they do not make up for a goal you didn't hit. Doing 8 goals well beats doing 10 goals badly. If time is short, finish fewer goals properly rather than leaving all ten half-done.
+---
+
+# Staff Assignment
+
+The system supports a many-to-many relationship between:
+
+```text
+Users <----> Sessions
+```
+
+through the `session_staff` association table.
+
+A staff member can be assigned to multiple sessions.
+
+A session can have multiple check-in staff members.
+
+Only organizers can assign or remove staff.
+
+---
+
+# Search, Filtering & Pagination
+
+Registration management supports:
+
+### Search
+
+* Attendee name
+* Attendee email
+
+### Filters
+
+* Event
+* Session
+* Registration status
+
+### Sorting
+
+Registrations can be sorted by:
+
+* Reserved time
+* Status
+* Session
+
+### Pagination
+
+Registration lists use server-side pagination and return the total number of matching records.
+
+---
+
+# CSV Import & Export
+
+## CSV Import
+
+Organizers can import registrations for a session using CSV.
+
+The import process handles rows independently.
+
+Each row can be:
+
+* Created
+* Duplicate
+* Rejected
+
+Rejected rows include a reason.
+
+Invalid rows do not prevent valid rows from being imported.
+
+## CSV Export
+
+Organizers can export a session check-in sheet as CSV.
+
+The exported file contains registration information useful during event check-in.
+
+---
+
+# Dashboard
+
+The dashboard provides an overview of event registration activity.
+
+It includes:
+
+* Sessions today
+* Checked-in attendees today
+* Expired registrations this week
+* Sessions at capacity
+* Registration status breakdown
+* Registrations by session
+* 14-day check-in activity chart
+
+Dashboard information is retrieved from the backend rather than being calculated only on the frontend.
+
+---
+
+# Capacity Alerts
+
+The system detects sessions that have reached capacity.
+
+Capacity alerts are available to organizers.
+
+When a session becomes full:
+
+```text
+Session reaches capacity
+        |
+        v
+Capacity alert created
+        |
+        v
+Organizer sees alert
+```
+
+Organizers can dismiss alerts.
+
+If seats become available and the session becomes full again, the alert can appear again.
+
+---
+
+# Registration History
+
+Registration changes are recorded in an immutable history.
+
+The history records important actions such as:
+
+* Registration creation
+* Status changes
+* Previous status
+* New status
+* Actor
+* Notes
+* Timestamp
+
+The history is not edited or deleted when the current registration changes.
+
+---
+
+# Technology Stack
+
+## Frontend
+
+* React
+* Vite
+* React Router
+* Axios
+* CSS
+
+## Backend
+
+* Python
+* FastAPI
+* SQLAlchemy
+* JWT Authentication
+* Pydantic
+
+## Database
+
+* Relational database
+* SQLAlchemy ORM
+
+---
+
+# Architecture
+
+```text
+                 ┌──────────────────────┐
+                 │      React/Vite      │
+                 │      Frontend        │
+                 └──────────┬───────────┘
+                            │
+                         Axios
+                            │
+                            ▼
+                 ┌──────────────────────┐
+                 │       FastAPI        │
+                 │       Backend        │
+                 └──────────┬───────────┘
+                            │
+                 ┌──────────┴───────────┐
+                 │                      │
+                 ▼                      ▼
+          ┌──────────────┐       ┌──────────────┐
+          │  Services /  │       │ JWT / Role   │
+          │ Business     │       │ Authorization│
+          │ Logic        │       └──────────────┘
+          └──────┬───────┘
+                 │
+                 ▼
+          ┌──────────────┐
+          │ SQLAlchemy   │
+          │ ORM          │
+          └──────┬───────┘
+                 │
+                 ▼
+          ┌──────────────┐
+          │ Relational   │
+          │ Database     │
+          └──────────────┘
+```
+
+---
+
+# Project Structure
+
+```text
+event-registration-system/
+│
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   └── routes/
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   ├── services/
+│   │   ├── core/
+│   │   └── main.py
+│   │
+│   ├── requirements.txt
+│   └── ...
+│
+├── frontend/
+│   ├── src/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── pages/
+│   │   ├── routes/
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   │
+│   ├── package.json
+│   └── ...
+│
+├── docs/
+│   ├── architecture.md
+│   ├── schema.md
+│   ├── plan.md
+│   ├── decisions.md
+│   └── ai-prompts.md
+│
+└── README.md
+```
+
+---
+
+# Backend API
+
+The backend is built using FastAPI.
+
+Main API groups include:
+
+| Area            | Endpoint examples                           |
+| --------------- | ------------------------------------------- |
+| Authentication  | `/auth/register`, `/auth/login`, `/auth/me` |
+| Events          | `/events`, `/events/{event_id}`             |
+| Sessions        | `/sessions`, `/sessions/{session_id}`       |
+| Registrations   | `/registrations`, `/registrations/search`   |
+| Staff           | `/sessions/{session_id}/staff/{staff_id}`   |
+| Dashboard       | `/dashboard`                                |
+| Capacity Alerts | `/capacity-alerts`                          |
+| Users           | `/users`                                    |
+
+The backend is responsible for authentication, authorization, business rules, validation, capacity enforcement, and database operations.
+
+---
+
+# Running the Project
+
+## Prerequisites
+
+Install:
+
+* Python 3.10+
+* Node.js
+* npm
+* A configured relational database
+
+---
+
+# Backend Setup
+
+Navigate to the backend:
+
+```bash
+cd backend
+```
+
+Create a virtual environment:
+
+### Windows
+
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+
+### Linux/macOS
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Configure the required database/environment variables according to the backend configuration.
+
+Start the FastAPI server:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+The backend will normally run at:
+
+```text
+http://127.0.0.1:8000
+```
+
+FastAPI documentation is available at:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+---
+
+# Frontend Setup
+
+Navigate to the frontend:
+
+```bash
+cd frontend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+The frontend will normally run at:
+
+```text
+http://localhost:5173
+```
+
+The backend CORS configuration allows the frontend to communicate from:
+
+```text
+http://localhost:5173
+http://127.0.0.1:5173
+```
+
+---
+
+# Authentication Flow
+
+The login flow is:
+
+```text
+User
+ |
+ | email + password
+ v
+React Login Page
+ |
+ | POST /auth/login
+ v
+FastAPI
+ |
+ | validate credentials
+ v
+JWT Access Token
+ |
+ v
+React
+ |
+ | store token
+ v
+GET /auth/me
+ |
+ v
+Authenticated User
+```
+
+The frontend uses the authenticated user's role to control the available UI.
+
+The backend independently enforces authorization so frontend restrictions cannot be bypassed by simply calling an API manually.
+
+---
+
+# Role-Based Access
+
+The application uses role-aware routing and UI.
+
+Example:
+
+```text
+                  Login
+                    |
+          ┌─────────┼─────────┐
+          │         │         │
+          ▼         ▼         ▼
+      Organizer    Staff   Attendee
+          │         │         │
+          ▼         ▼         ▼
+      Dashboard  Dashboard  Profile
+```
+
+Frontend role checks improve usability, while backend authorization provides the actual security boundary.
+
+---
+
+# Example Registration Flow
+
+An attendee registers for a session:
+
+```text
+Attendee
+   |
+   | Select session
+   v
+Session Details
+   |
+   | Register
+   v
+POST /registrations
+   |
+   v
+Backend validation
+   |
+   ├── Session exists?
+   ├── Capacity available?
+   ├── Registration allowed?
+   └── Valid user?
+   |
+   v
+Create Reserved registration
+   |
+   v
+Registration history created
+   |
+   v
+Response returned to frontend
+```
+
+An organizer/staff member can then move the registration through the allowed lifecycle.
+
+---
+
+# Security
+
+The application uses server-side authorization for protected operations.
+
+Important security principles include:
+
+* JWT authentication
+* Password authentication through the backend
+* Role-based authorization
+* Backend-side capacity validation
+* Backend-side registration state validation
+* Session staff authorization
+* Organizer-only administrative operations
+* No reliance on frontend-only permissions
+
+A user hiding a button in the frontend does not grant or remove backend permissions.
+
+---
+
+# Error Handling
+
+The frontend displays backend error messages where available.
+
+Typical errors include:
+
+* Invalid login credentials
+* Unauthorized access
+* Session not found
+* Event not found
+* Session at capacity
+* Invalid registration transition
+* Registration already exists
+* Invalid CSV row
+* Staff assignment failure
+
+The backend returns appropriate HTTP errors and reasons which are displayed by the frontend.
+
+---
+
+# Development Decisions
+
+Some design decisions were intentionally made to keep the system simple and maintainable.
+
+### React + Vite
+
+React with Vite was selected for a lightweight frontend development environment.
+
+### Existing FastAPI Backend
+
+The existing backend API was reused instead of rewriting the backend.
+
+### JWT Authentication
+
+JWT authentication provides a straightforward stateless authentication mechanism.
+
+### Backend Authorization
+
+Authorization is enforced by the backend instead of relying only on frontend route restrictions.
+
+### Many-to-Many Staff Assignment
+
+A separate `session_staff` table allows staff members to be assigned to multiple sessions and sessions to have multiple staff members.
+
+### Explicit Registration Lifecycle
+
+Registration states are represented explicitly instead of using multiple unrelated boolean fields.
+
+### Immutable Registration History
+
+Registration history is stored separately so that changes remain auditable.
+
+### Server-Side Search and Pagination
+
+Filtering, sorting and pagination are performed by the backend to avoid loading large registration datasets into the browser.
+
+---
+
+# Documentation
+
+Additional project documentation is available in the `docs/` directory.
+
+### Architecture
+
+```text
+docs/architecture.md
+```
+
+Describes:
+
+* System components
+* Communication between components
+* Runtime locations
+* End-to-end request flow
+* Features intentionally not implemented
+
+### Database Schema
+
+```text
+docs/schema.md
+```
+
+Describes:
+
+* Database tables
+* Columns
+* Relationships
+* Constraints
+* Denormalization
+* Scaling considerations
+
+### Development Plan
+
+```text
+docs/plan.md
+```
+
+Describes:
+
+* Development sessions
+* Work ordering
+* Estimated effort
+* Actual effort
+* Scope decisions
+
+### Technical Decisions
+
+```text
+docs/decisions.md
+```
+
+Contains important implementation decisions and alternatives considered.
+
+### AI Usage
+
+```text
+docs/ai-prompts.md
+```
+
+Documents AI-assisted development prompts, outputs, and corrections.
+
+---
+
+# Testing Checklist
+
+The following scenarios should be tested before deployment:
+
+## Authentication
+
+* [ ] Register attendee
+* [ ] Login with valid credentials
+* [ ] Reject invalid credentials
+* [ ] Logout
+* [ ] Restore authenticated session after refresh
+
+## Organizer
+
+* [ ] Create event
+* [ ] Edit event
+* [ ] Archive event
+* [ ] Restore event
+* [ ] Create session
+* [ ] Edit session
+* [ ] Delete session
+* [ ] Assign staff
+* [ ] Remove staff
+
+## Attendee
+
+* [ ] View events
+* [ ] View sessions
+* [ ] Register for session
+* [ ] View registration
+* [ ] Cancel eligible registration
+* [ ] View registration history
+
+## Registration
+
+* [ ] Reserved registration
+* [ ] Confirm registration
+* [ ] Check in registration
+* [ ] Cancel registration
+* [ ] Reject invalid state transition
+* [ ] Reject registration when capacity is full
+* [ ] Verify expiration
+
+## Staff
+
+* [ ] View assigned sessions
+* [ ] View assigned registrations
+* [ ] Confirm registration
+* [ ] Check in attendee
+* [ ] Verify staff cannot create sessions
+* [ ] Verify staff cannot modify capacity
+
+## CSV
+
+* [ ] Import valid rows
+* [ ] Handle duplicate rows
+* [ ] Handle invalid rows
+* [ ] Verify valid rows still import
+* [ ] Export check-in sheet
+
+## Dashboard
+
+* [ ] Sessions today
+* [ ] Checked-in today
+* [ ] Expired this week
+* [ ] Full sessions
+* [ ] Status breakdown
+* [ ] Session registration statistics
+* [ ] 14-day check-in chart
+
+## Capacity Alerts
+
+* [ ] Alert when session becomes full
+* [ ] Dismiss alert
+* [ ] Free a seat
+* [ ] Fill session again
+* [ ] Verify alert appears again
+
+---
+
+# API Documentation
+
+Once the backend is running, interactive API documentation is available through FastAPI:
+
+```text
+/docs
+```
+
+This can be used to inspect and manually test the available endpoints.
+
+---
+
+# Future Improvements
+
+Possible future improvements include:
+
+* Email notifications
+* SMS notifications
+* QR-code based check-in
+* Real-time dashboard updates
+* Redis caching
+* Background jobs
+* Advanced analytics
+* Automated deployment
+* Docker-based deployment
+* Automated unit/integration tests
+* CI/CD pipeline
+* Production monitoring
+
+These were kept outside the current scope to focus on the required event registration functionality.
+
+---
+
+# Project Status
+
+The current implementation covers the required event registration workflow including:
+
+* Authentication
+* Role-based access
+* Events
+* Sessions
+* Registration lifecycle
+* Staff assignment
+* Search/filtering/pagination
+* CSV import/export
+* Dashboard
+* Registration history
+* Capacity alerts
+
+
+
+# License
+
+This project was developed as part of a software development assignment.
+
+
