@@ -578,6 +578,50 @@ Example:
 Frontend role checks improve usability, while backend authorization provides the actual security boundary.
 
 ---
+## Creating Demo Organizer and Check-in Staff
+
+For security reasons, the public registration endpoint creates only `attendee` accounts.  
+Organizer and check-in staff accounts must be created using the seed script.
+
+From the `backend` directory, run:
+
+```bash
+python seed.py
+
+This creates the following demo accounts:
+
+Role	Email	Password
+Organizer	organizer@example.com	Organizer@123
+Check-in Staff	staff@example.com	Staff@123
+
+The seed script is safe to run multiple times because it checks whether the user already exists before creating a new account.
+
+Important
+
+Run the seed script after configuring the database connection in the backend .env file.
+
+cd backend
+python seed.py
+
+After the accounts are created, you can use the organizer account to access organizer-only features such as event/session management, staff assignment, and dashboard functionality.
+
+
+### I also recommend adding it near
+
+```text
+Installation / Setup
+       ↓
+Database Configuration
+       ↓
+Run Migrations
+       ↓
+Create Demo Users   ← add here
+       ↓
+Run Backend
+       ↓
+Run Frontend
+
+
 
 # Example Registration Flow
 
