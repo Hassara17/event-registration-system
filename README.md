@@ -1422,7 +1422,7 @@ The Event Registration System is deployed and available online.
 
 The React frontend is deployed on **Vercel**:
 
-[Open Event Registration System Frontend](https://event-registration-system-g303ykami-hassan-20f1.vercel.app/login)
+[Open Event Registration System Frontend](https://event-registration-system-three-gules.vercel.app/)
 
 Use this link to access the application and test the user interface.
 
