@@ -1,358 +1,338 @@
-# README.md
-
-````md
 # Event Registration System
 
-A full-stack event registration and session management system built with a **React + Vite frontend** and a **FastAPI backend**.
+A full-stack **Event Registration System** for managing events, sessions, attendees, registrations, staff assignments, check-ins, dashboards, capacity monitoring, and registration history.
 
-The system supports multiple user roles, event and session management, registration lifecycle management, staff assignment, CSV import/export, dashboards, registration history, and capacity alerts.
+The system is built with a **FastAPI backend**, **PostgreSQL database**, **Alembic migrations**, and a **React + Vite frontend**.
 
 ---
 
-## Features
+## Table of Contents
 
-### 1. Authentication & Role Management
+* [Overview](#overview)
+* [Features](#features)
+* [User Roles](#user-roles)
+* [Registration Lifecycle](#registration-lifecycle)
+* [Technology Stack](#technology-stack)
+* [System Architecture](#system-architecture)
+* [Project Structure](#project-structure)
+* [Database](#database)
+* [Backend API](#backend-api)
+* [Getting Started](#getting-started)
+* [Environment Configuration](#environment-configuration)
+* [Database Setup](#database-setup)
+* [Creating Demo Users](#creating-demo-users)
+* [Running the Backend](#running-the-backend)
+* [Running the Frontend](#running-the-frontend)
+* [Authentication](#authentication)
+* [Role-Based Access Control](#role-based-access-control)
+* [Event Management](#event-management)
+* [Session Management](#session-management)
+* [Registration Management](#registration-management)
+* [Staff Assignment](#staff-assignment)
+* [Check-In](#check-in)
+* [Search, Filtering and Pagination](#search-filtering-and-pagination)
+* [CSV Import and Export](#csv-import-and-export)
+* [Dashboard and Statistics](#dashboard-and-statistics)
+* [Capacity Alerts](#capacity-alerts)
+* [Registration History](#registration-history)
+* [Security](#security)
+* [Error Handling](#error-handling)
+* [API Documentation](#api-documentation)
+* [Testing Checklist](#testing-checklist)
+* [Development Decisions](#development-decisions)
+* [Future Improvements](#future-improvements)
+* [Project Status](#project-status)
+* [License](#license)
 
-The application supports three roles:
+---
 
-- **Organizer**
-- **Check-in Staff**
-- **Attendee**
+# Overview
 
-Authentication is handled using JWT-based authentication.
+The Event Registration System provides a centralized platform for organizing events and managing participant registrations.
 
-#### Organizer
+The system supports three primary user roles:
+
+* **Attendee**
+* **Organizer**
+* **Check-in Staff**
+
+Each role has different permissions and responsibilities.
+
+The application manages the complete registration lifecycle, from event discovery and registration to confirmation, cancellation, expiration, and check-in.
+
+---
+
+# Features
+
+## Authentication
+
+* User registration
+* User login
+* Password hashing
+* JWT-based authentication
+* Current-user endpoint
+* Role-based authorization
+* Protected API endpoints
+
+## Event Management
 
 Organizers can:
 
-- Create events
-- Edit events
-- Archive and restore events
-- Create sessions
-- Edit sessions
-- Delete sessions
-- Set session capacity
-- Create registrations
-- Confirm registrations
-- Cancel registrations
-- Check in attendees
-- Import registrations using CSV
-- Export session check-in sheets
-- Assign check-in staff to sessions
-- Remove staff from sessions
-- View registration statistics
-- View registration history
-- Manage capacity alerts
+* Create events
+* Edit events
+* Archive events
+* Restore archived events
+* View events
+* Manage event details
 
-#### Check-in Staff
+## Session Management
 
-Check-in staff can:
+Organizers can:
 
-- View assigned sessions
-- View registrations for assigned sessions
-- Confirm registrations
-- Cancel registrations
-- Check in attendees
-- View session information
+* Create sessions
+* Edit sessions
+* Delete sessions
+* Set session capacity
+* Define session start time
+* Define session duration
+* Set session location
 
-They cannot:
-
-- Create events
-- Create sessions
-- Change session capacity
-- Assign staff
-
-#### Attendee
+## Registration Management
 
 Attendees can:
 
-- Register/login
-- View events
-- View sessions
-- Register for sessions
-- View their registrations
-- Cancel eligible registrations
-- View their registration history
-- View their profile
+* Browse events
+* View sessions
+* Register for sessions
+* View their registrations
+* Cancel eligible registrations
+* View registration history
+
+Organizers and authorized staff can:
+
+* View registrations
+* Confirm registrations
+* Cancel registrations
+* Manage registration status
+* Check attendees in
+
+## Staff Management
+
+Organizers can:
+
+* Assign check-in staff to sessions
+* View assigned staff
+* Manage session staff assignments
+
+Check-in staff can:
+
+* View assigned sessions
+* View registrations for assigned sessions
+* Perform check-in operations
+
+## Dashboard
+
+The system provides dashboard information such as:
+
+* Total events
+* Total sessions
+* Registration statistics
+* Confirmed registrations
+* Checked-in attendees
+* Capacity information
+
+## Capacity Monitoring
+
+The system tracks session capacity and registration usage.
+
+Capacity counts include:
+
+* Reserved
+* Confirmed
+* Checked In
+
+The system can also provide capacity-related alerts.
+
+## Search and Filtering
+
+Supported functionality includes:
+
+* Event search
+* Session filtering
+* Registration filtering
+* Status filtering
+* Pagination
+
+## CSV Import and Export
+
+The system supports CSV-based operations for registration-related data.
+
+---
+
+# User Roles
+
+## Attendee
+
+Attendees can:
+
+* Register for an account
+* Log in
+* Browse events
+* View sessions
+* Register for sessions
+* View their registrations
+* Cancel eligible registrations
+* View registration history
+* Manage their profile
+
+Attendees cannot:
+
+* Create events
+* Create sessions
+* Change session capacity
+* Assign staff
+* Perform staff-level check-in operations
+
+---
+
+## Organizer
+
+Organizers have administrative capabilities for event management.
+
+They can:
+
+* Create events
+* Edit events
+* Archive events
+* Restore events
+* Create sessions
+* Edit sessions
+* Delete sessions
+* Change capacity
+* View registrations
+* Manage registrations
+* Assign check-in staff
+* View dashboards
+* View statistics
+* View capacity alerts
+* Import/export CSV data
+
+---
+
+## Check-in Staff
+
+Check-in staff have operational permissions for sessions assigned to them.
+
+They can:
+
+* View assigned sessions
+* View registrations for assigned sessions
+* Confirm eligible registrations
+* Cancel eligible registrations
+* Check attendees in
+
+They cannot:
+
+* Create events
+* Create sessions
+* Change session capacity
+* Assign staff
+* Perform organizer-level administrative operations
 
 ---
 
 # Registration Lifecycle
 
-Registrations follow the lifecycle:
+A registration follows a controlled lifecycle.
 
 ```text
 Reserved
-    |
-    +------> Cancelled
-    |
-    +------> Expired
-    |
-    v
-Confirmed
-    |
-    +------> Cancelled
-    |
-    v
-Checked In
-````
-
-### Rules
-
-* `Reserved`, `Confirmed`, and `Checked In` count toward session capacity.
-* A session cannot exceed its configured capacity.
-* Reserved registrations can expire after the holding period.
-* Reserved registrations can be cancelled.
-* Confirmed registrations can be cancelled.
-* Checked-in registrations cannot be cancelled.
-* Invalid state transitions are rejected by the backend.
-* Registration history is immutable.
-
----
-
-# Event Management
-
-An event contains:
-
-* Title
-* Description
-* Start date
-* End date
-* Venue
-* Organizer
-* Archive status
-
-Events can be:
-
-* Created
-* Updated
-* Archived
-* Restored
-* Deleted
-
-Archived events are hidden from normal views while their sessions and registrations remain stored.
-
----
-
-# Session Management
-
-Each session belongs to an event.
-
-A session contains:
-
-* Event
-* Title
-* Start time
-* Duration
-* Location
-* Capacity
-
-Organizers can create, update, and delete sessions.
-
-The system also provides session-level:
-
-* Registration statistics
-* Registration management
-* Staff assignment
-* CSV import
-* CSV export
-
----
-
-# Staff Assignment
-
-The system supports a many-to-many relationship between:
-
-```text
-Users <----> Sessions
+   │
+   ├──> Confirmed
+   │       │
+   │       └──> Checked In
+   │
+   ├──> Cancelled
+   │
+   └──> Expired
 ```
 
-through the `session_staff` association table.
+## Registration States
 
-A staff member can be assigned to multiple sessions.
+| Status     | Description                                            |
+| ---------- | ------------------------------------------------------ |
+| Reserved   | Registration has been created but is not yet confirmed |
+| Confirmed  | Registration has been successfully confirmed           |
+| Checked In | Attendee has checked in                                |
+| Cancelled  | Registration has been cancelled                        |
+| Expired    | Registration has expired                               |
 
-A session can have multiple check-in staff members.
-
-Only organizers can assign or remove staff.
-
----
-
-# Search, Filtering & Pagination
-
-Registration management supports:
-
-### Search
-
-* Attendee name
-* Attendee email
-
-### Filters
-
-* Event
-* Session
-* Registration status
-
-### Sorting
-
-Registrations can be sorted by:
-
-* Reserved time
-* Status
-* Session
-
-### Pagination
-
-Registration lists use server-side pagination and return the total number of matching records.
-
----
-
-# CSV Import & Export
-
-## CSV Import
-
-Organizers can import registrations for a session using CSV.
-
-The import process handles rows independently.
-
-Each row can be:
-
-* Created
-* Duplicate
-* Rejected
-
-Rejected rows include a reason.
-
-Invalid rows do not prevent valid rows from being imported.
-
-## CSV Export
-
-Organizers can export a session check-in sheet as CSV.
-
-The exported file contains registration information useful during event check-in.
-
----
-
-# Dashboard
-
-The dashboard provides an overview of event registration activity.
-
-It includes:
-
-* Sessions today
-* Checked-in attendees today
-* Expired registrations this week
-* Sessions at capacity
-* Registration status breakdown
-* Registrations by session
-* 14-day check-in activity chart
-
-Dashboard information is retrieved from the backend rather than being calculated only on the frontend.
-
----
-
-# Capacity Alerts
-
-The system detects sessions that have reached capacity.
-
-Capacity alerts are available to organizers.
-
-When a session becomes full:
-
-```text
-Session reaches capacity
-        |
-        v
-Capacity alert created
-        |
-        v
-Organizer sees alert
-```
-
-Organizers can dismiss alerts.
-
-If seats become available and the session becomes full again, the alert can appear again.
-
----
-
-# Registration History
-
-Registration changes are recorded in an immutable history.
-
-The history records important actions such as:
-
-* Registration creation
-* Status changes
-* Previous status
-* New status
-* Actor
-* Notes
-* Timestamp
-
-The history is not edited or deleted when the current registration changes.
+Registration history is preserved so that previous state changes are not lost.
 
 ---
 
 # Technology Stack
 
-## Frontend
-
-* React
-* Vite
-* React Router
-* Axios
-* CSS
-
 ## Backend
 
 * Python
 * FastAPI
-* SQLAlchemy
-* JWT Authentication
 * Pydantic
+* SQLAlchemy
+* Alembic
+* PostgreSQL
+* Uvicorn
+* JWT Authentication
+* Password hashing
 
-## Database
+## Frontend
 
-* Relational database
-* SQLAlchemy ORM
+* React
+* Vite
+* JavaScript
+* HTML
+* CSS
+
+## Development Tools
+
+* Git
+* GitHub
+* REST API
+* Swagger/OpenAPI
+* PostgreSQL
+* Python Virtual Environment
 
 ---
 
-# Architecture
+# System Architecture
 
 ```text
-                 ┌──────────────────────┐
-                 │      React/Vite      │
-                 │      Frontend        │
-                 └──────────┬───────────┘
-                            │
-                         Axios
-                            │
-                            ▼
-                 ┌──────────────────────┐
-                 │       FastAPI        │
-                 │       Backend        │
-                 └──────────┬───────────┘
-                            │
-                 ┌──────────┴───────────┐
-                 │                      │
-                 ▼                      ▼
-          ┌──────────────┐       ┌──────────────┐
-          │  Services /  │       │ JWT / Role   │
-          │ Business     │       │ Authorization│
-          │ Logic        │       └──────────────┘
-          └──────┬───────┘
-                 │
-                 ▼
-          ┌──────────────┐
-          │ SQLAlchemy   │
-          │ ORM          │
-          └──────┬───────┘
-                 │
-                 ▼
-          ┌──────────────┐
-          │ Relational   │
-          │ Database     │
-          └──────────────┘
+                    ┌──────────────────────┐
+                    │     React Frontend   │
+                    │      Vite + React    │
+                    └──────────┬───────────┘
+                               │
+                               │ HTTP / REST API
+                               ▼
+                    ┌──────────────────────┐
+                    │    FastAPI Backend   │
+                    │                      │
+                    │ Authentication       │
+                    │ Authorization        │
+                    │ Events               │
+                    │ Sessions             │
+                    │ Registrations        │
+                    │ Staff Management     │
+                    │ Check-in             │
+                    │ Dashboard            │
+                    └──────────┬───────────┘
+                               │
+                               │ SQLAlchemy
+                               ▼
+                    ┌──────────────────────┐
+                    │      PostgreSQL      │
+                    │       Database       │
+                    └──────────────────────┘
 ```
 
 ---
@@ -363,74 +343,135 @@ The history is not edited or deleted when the current registration changes.
 event-registration-system/
 │
 ├── backend/
+│   │
 │   ├── app/
 │   │   ├── api/
-│   │   │   └── routes/
+│   │   ├── core/
 │   │   ├── models/
 │   │   ├── schemas/
 │   │   ├── services/
-│   │   ├── core/
+│   │   ├── seed.py
 │   │   └── main.py
 │   │
+│   ├── alembic/
+│   │   └── versions/
+│   │
 │   ├── requirements.txt
-│   └── ...
+│   └── .env
 │
 ├── frontend/
+│   │
 │   ├── src/
-│   │   ├── api/
 │   │   ├── components/
-│   │   ├── context/
 │   │   ├── pages/
+│   │   ├── services/
+│   │   ├── hooks/
 │   │   ├── routes/
-│   │   ├── App.jsx
-│   │   └── main.jsx
+│   │   └── App.jsx
 │   │
 │   ├── package.json
-│   └── ...
+│   └── vite.config.js
 │
-├── docs/
-│   ├── architecture.md
-│   ├── schema.md
-│   ├── plan.md
-│   ├── decisions.md
-│   └── ai-prompts.md
-│
-└── README.md
+├── README.md
+└── .gitignore
 ```
+
+---
+
+# Database
+
+The application uses **PostgreSQL** as the primary database.
+
+The database stores information related to:
+
+* Users
+* Events
+* Sessions
+* Registrations
+* Session staff
+* Registration history
+
+Database schema changes are managed using **Alembic migrations**.
 
 ---
 
 # Backend API
 
-The backend is built using FastAPI.
+The backend exposes REST APIs for the application's major operations.
 
-Main API groups include:
+Main API areas include:
 
-| Area            | Endpoint examples                           |
-| --------------- | ------------------------------------------- |
-| Authentication  | `/auth/register`, `/auth/login`, `/auth/me` |
-| Events          | `/events`, `/events/{event_id}`             |
-| Sessions        | `/sessions`, `/sessions/{session_id}`       |
-| Registrations   | `/registrations`, `/registrations/search`   |
-| Staff           | `/sessions/{session_id}/staff/{staff_id}`   |
-| Dashboard       | `/dashboard`                                |
-| Capacity Alerts | `/capacity-alerts`                          |
-| Users           | `/users`                                    |
+```text
+/auth
+/events
+/sessions
+/registrations
+/users
+/staff
+/dashboard
+/capacity-alerts
+```
 
-The backend is responsible for authentication, authorization, business rules, validation, capacity enforcement, and database operations.
+Examples:
+
+```text
+POST   /auth/register
+POST   /auth/login
+GET    /auth/me
+
+GET    /events
+POST   /events
+
+GET    /sessions
+POST   /sessions
+
+GET    /registrations
+POST   /registrations
+
+POST   /registrations/{id}/confirm
+POST   /registrations/{id}/cancel
+POST   /registrations/{id}/check-in
+```
+
+The exact available endpoints can be viewed through the automatically generated API documentation.
 
 ---
 
-# Running the Project
+# Getting Started
 
 ## Prerequisites
 
-Install:
+Install the following software before running the project:
 
 * Python 3.10+
 * Node.js
 * npm
-* A configured relational database
+* PostgreSQL
+* Git
+
+Verify the installations:
+
+```bash
+python --version
+node --version
+npm --version
+psql --version
+git --version
+```
+
+---
+
+# Clone the Repository
+
+```bash
+git clone https://github.com/Hassara17/event-registration-system.git
+```
+
+Navigate into the project:
+
+```bash
+cd event-registration-system
+```
 
 ---
 
@@ -442,7 +483,7 @@ Navigate to the backend:
 cd backend
 ```
 
-Create a virtual environment:
+Create a Python virtual environment:
 
 ### Windows
 
@@ -464,31 +505,163 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Configure the required database/environment variables according to the backend configuration.
+---
 
-Start the FastAPI server:
+# Environment Configuration
+
+Create a `.env` file inside the `backend` directory.
+
+Example:
+
+```env
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/event_registration
+SECRET_KEY=your_secret_key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
+Replace:
+
+```text
+your_password
+```
+
+with your PostgreSQL password.
+
+Use a strong secret key for `SECRET_KEY`.
+
+---
+
+# Database Setup
+
+Create the PostgreSQL database:
+
+```sql
+CREATE DATABASE event_registration;
+```
+
+Then make sure the database configuration in `.env` points to this database.
+
+From the `backend` directory, run the migrations:
+
+```bash
+alembic upgrade head
+```
+
+This creates the required database tables.
+
+---
+
+# Creating Demo Users
+
+The application supports three user roles:
+
+```text
+attendee
+organizer
+checkin_staff
+```
+
+## Attendee
+
+Attendees can be created through the application's public registration endpoint.
+
+A newly registered user is automatically assigned the:
+
+```text
+attendee
+```
+
+role.
+
+You can create an attendee through the frontend registration page or the API:
+
+```text
+POST /auth/register
+```
+
+---
+
+## Organizer and Check-in Staff
+
+Organizer and Check-in Staff accounts are created using the seed script:
+
+```text
+backend/app/seed.py
+```
+
+### Run the Seed Script
+
+Make sure your terminal is inside the `backend` directory:
+
+```bash
+cd backend
+```
+
+Then run:
+
+```bash
+python app/seed.py
+```
+
+The seed script creates the demo Organizer and Check-in Staff accounts if they do not already exist.
+
+The seed operation is designed to avoid creating duplicate users when the demo accounts already exist.
+
+---
+
+## Demo Credentials
+
+| Role           | Name                | Email                   | Password        |
+| -------------- | ------------------- | ----------------------- | --------------- |
+| Organizer      | Demo Organizer      | `organizer@example.com` | `Organizer@123` |
+| Check-in Staff | Demo Check-in Staff | `staff@example.com`     | `Staff@123`     |
+
+For an attendee account, use the normal registration page/API to create an account.
+
+> **Important:** These are demo credentials intended for local development/testing. Do not use them in a production deployment.
+
+---
+
+# Recommended Setup Order
+
+For a fresh installation, follow this order:
+
+```text
+1. Clone repository
+2. Configure PostgreSQL
+3. Create event_registration database
+4. Configure backend .env
+5. Create Python virtual environment
+6. Install backend dependencies
+7. Run Alembic migrations
+8. Run backend/app/seed.py
+9. Start FastAPI backend
+10. Install frontend dependencies
+11. Start React frontend
+```
+
+---
+
+# Running the Backend
+
+From the `backend` directory:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-The backend will normally run at:
+The backend will normally be available at:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-FastAPI documentation is available at:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
 ---
 
-# Frontend Setup
+# Running the Frontend
 
-Navigate to the frontend:
+Open another terminal and navigate to the frontend:
 
 ```bash
 cd frontend
@@ -506,313 +679,429 @@ Start the development server:
 npm run dev
 ```
 
-The frontend will normally run at:
+Vite will display the frontend URL in the terminal, normally:
 
 ```text
 http://localhost:5173
-```
-
-The backend CORS configuration allows the frontend to communicate from:
-
-```text
-http://localhost:5173
-http://127.0.0.1:8000/docs
 ```
 
 ---
 
-# Authentication Flow
+# Authentication
 
-The login flow is:
+Authentication uses JWT-based authentication.
+
+The general authentication flow is:
 
 ```text
 User
- |
- | email + password
- v
-React Login Page
- |
- | POST /auth/login
- v
-FastAPI
- |
- | validate credentials
- v
-JWT Access Token
- |
- v
-React
- |
- | store token
- v
-GET /auth/me
- |
- v
-Authenticated User
+ │
+ ├── Register
+ │
+ └── Login
+       │
+       ▼
+   FastAPI Backend
+       │
+       ▼
+   Validate Credentials
+       │
+       ▼
+   Generate JWT
+       │
+       ▼
+   React Frontend
+       │
+       ▼
+Authenticated Requests
 ```
 
-The frontend uses the authenticated user's role to control the available UI.
+Protected API requests include the JWT access token.
 
-The backend independently enforces authorization so frontend restrictions cannot be bypassed by simply calling an API manually.
+The backend validates the token before allowing access to protected resources.
 
 ---
 
-# Role-Based Access
+# Role-Based Access Control
 
-The application uses role-aware routing and UI.
+Authorization is enforced on the backend.
+
+A user's role determines which operations they are allowed to perform.
+
+```text
+                    User
+                     │
+              ┌──────┴──────┐
+              │             │
+          Authenticated?    │
+              │             │
+             Yes            │
+              │             │
+         Check Role         │
+              │             │
+      ┌───────┼────────┐    │
+      │       │        │    │
+  Attendee Organizer Staff  │
+      │       │        │
+      ▼       ▼        ▼    │
+  Allowed   Allowed   Allowed
+  Actions   Actions   Actions
+```
+
+Frontend role restrictions improve the user experience, but the backend remains responsible for enforcing authorization.
+
+---
+
+# Event Management
+
+Organizers can create and manage events.
+
+Typical event information includes:
+
+* Event title
+* Description
+* Event details
+* Event status
+* Sessions associated with the event
+
+Organizers can also archive and restore events.
+
+---
+
+# Session Management
+
+Each event can contain multiple sessions.
+
+A session may contain:
+
+* Session title
+* Start time
+* Duration
+* Location
+* Capacity
+* Event association
+
+Organizers can create, update, and delete sessions.
+
+Capacity is enforced by the backend.
+
+---
+
+# Registration Management
+
+The registration process allows attendees to register for available sessions.
+
+A typical flow is:
+
+```text
+Browse Event
+     │
+     ▼
+Select Session
+     │
+     ▼
+Register
+     │
+     ▼
+Reserved
+     │
+     ▼
+Confirm
+     │
+     ▼
+Confirmed
+     │
+     ▼
+Check In
+     │
+     ▼
+Checked In
+```
+
+Registrations can also transition to:
+
+```text
+Cancelled
+Expired
+```
+
+depending on the applicable business rules.
+
+---
+
+# Staff Assignment
+
+Organizers can assign check-in staff to sessions.
+
+The relationship is maintained through the session-staff assignment.
+
+```text
+Organizer
+    │
+    ▼
+Select Session
+    │
+    ▼
+Assign Check-in Staff
+    │
+    ▼
+Staff can access assigned session
+```
+
+Check-in staff should only have access to the sessions assigned to them.
+
+---
+
+# Check-In
+
+Check-in staff can check registered attendees into their assigned sessions.
+
+A typical check-in flow is:
+
+```text
+Confirmed Registration
+          │
+          ▼
+    Check-in Staff
+          │
+          ▼
+      Check In
+          │
+          ▼
+      Checked In
+```
+
+The backend verifies that the staff member has the required permissions before allowing the operation.
+
+---
+
+# Search, Filtering and Pagination
+
+The application supports data discovery through:
+
+* Search
+* Filtering
+* Pagination
+
+These capabilities help users efficiently work with larger event and registration datasets.
+
+Examples include:
+
+* Searching events
+* Filtering sessions
+* Filtering registrations by status
+* Paginating registration results
+
+---
+
+# CSV Import and Export
+
+The system supports CSV-based data operations.
+
+CSV functionality can be used to:
+
+* Import registration-related data
+* Export registration-related information
+* Work with larger datasets
+
+Validation is performed during import to prevent invalid data from being inserted into the database.
+
+---
+
+# Dashboard and Statistics
+
+The dashboard provides an overview of the system.
+
+Depending on the user's role, dashboard information may include:
+
+* Total events
+* Total sessions
+* Total registrations
+* Confirmed registrations
+* Cancelled registrations
+* Checked-in attendees
+* Session capacity
+* Registration statistics
+
+Role-specific authorization prevents users from accessing information they are not permitted to view.
+
+---
+
+# Capacity Alerts
+
+The system monitors session capacity.
+
+The capacity calculation considers active registrations:
+
+```text
+Reserved
+Confirmed
+Checked In
+```
 
 Example:
 
 ```text
-                  Login
-                    |
-          ┌─────────┼─────────┐
-          │         │         │
-          ▼         ▼         ▼
-      Organizer    Staff   Attendee
-          │         │         │
-          ▼         ▼         ▼
-      Dashboard  Dashboard  Profile
+Capacity = 100
+
+Reserved     = 20
+Confirmed    = 60
+Checked In   = 10
+------------------
+Active       = 90
 ```
 
-Frontend role checks improve usability, while backend authorization provides the actual security boundary.
+Remaining capacity:
+
+```text
+100 - 90 = 10
+```
+
+Capacity alerts can be used to identify sessions approaching or reaching their limits.
 
 ---
-## Creating Demo Organizer and Check-in Staff
 
-For security reasons, the public registration endpoint creates only `attendee` accounts.  
-Organizer and check-in staff accounts must be created using the seed script.
+# Registration History
 
-From the `backend` directory, run:
+Registration history is maintained separately from the current registration state.
 
-```bash
-python seed.py
+This allows the system to preserve important lifecycle information.
 
-This creates the following demo accounts:
-
-Role	Email	Password
-Organizer	organizer@example.com	Organizer@123
-Check-in Staff	staff@example.com	Staff@123
-
-The seed script is safe to run multiple times because it checks whether the user already exists before creating a new account.
-
-Important
-
-Run the seed script after configuring the database connection in the backend .env file.
-
-cd backend
-python seed.py
-
-After the accounts are created, you can use the organizer account to access organizer-only features such as event/session management, staff assignment, and dashboard functionality.
-
-
-### I also recommend adding it near
+Example:
 
 ```text
-Installation / Setup
-       ↓
-Database Configuration
-       ↓
-Run Migrations
-       ↓
-Create Demo Users   ← add here
-       ↓
-Run Backend
-       ↓
-Run Frontend
-
-
-
-# Example Registration Flow
-
-An attendee registers for a session:
-
-```text
-Attendee
-   |
-   | Select session
-   v
-Session Details
-   |
-   | Register
-   v
-POST /registrations
-   |
-   v
-Backend validation
-   |
-   ├── Session exists?
-   ├── Capacity available?
-   ├── Registration allowed?
-   └── Valid user?
-   |
-   v
-Create Reserved registration
-   |
-   v
-Registration history created
-   |
-   v
-Response returned to frontend
+Reserved
+   │
+   ▼
+Confirmed
+   │
+   ▼
+Checked In
 ```
 
-An organizer/staff member can then move the registration through the allowed lifecycle.
+The historical states are preserved rather than simply overwriting the previous state.
+
+This provides better traceability and auditing.
 
 ---
 
 # Security
 
-The application uses server-side authorization for protected operations.
+The application includes several security mechanisms.
 
-Important security principles include:
+## Password Hashing
 
-* JWT authentication
-* Password authentication through the backend
-* Role-based authorization
-* Backend-side capacity validation
-* Backend-side registration state validation
-* Session staff authorization
-* Organizer-only administrative operations
-* No reliance on frontend-only permissions
+Passwords are not stored as plain text.
 
-A user hiding a button in the frontend does not grant or remove backend permissions.
+Passwords are securely hashed before being stored in the database.
+
+## JWT Authentication
+
+Protected endpoints require a valid authentication token.
+
+## Role-Based Authorization
+
+API operations are protected according to the user's role.
+
+## Backend Authorization
+
+Authorization is enforced on the backend rather than relying only on frontend restrictions.
+
+## Input Validation
+
+FastAPI/Pydantic validation is used to validate incoming request data.
+
+## Database Constraints
+
+Database constraints help maintain data integrity.
+
+## Protected Operations
+
+Sensitive operations such as:
+
+* Creating events
+* Changing capacity
+* Assigning staff
+* Checking in attendees
+
+are protected by authorization rules.
 
 ---
 
 # Error Handling
 
-The frontend displays backend error messages where available.
+The backend uses appropriate HTTP status codes and structured error responses.
 
-Typical errors include:
+Examples include:
 
-* Invalid login credentials
-* Unauthorized access
-* Session not found
-* Event not found
-* Session at capacity
-* Invalid registration transition
-* Registration already exists
-* Invalid CSV row
-* Staff assignment failure
+| Status Code | Meaning                         |
+| ----------- | ------------------------------- |
+| `200`       | Successful request              |
+| `201`       | Resource created                |
+| `400`       | Invalid request                 |
+| `401`       | Authentication required/invalid |
+| `403`       | Insufficient permissions        |
+| `404`       | Resource not found              |
+| `409`       | Conflict                        |
+| `422`       | Validation error                |
+| `500`       | Internal server error           |
 
-The backend returns appropriate HTTP errors and reasons which are displayed by the frontend.
+Example:
+
+```text
+403 Forbidden
+```
+
+means that the authenticated user does not have sufficient permission to perform the requested operation.
 
 ---
 
-# Development Decisions
+# API Documentation
 
-Some design decisions were intentionally made to keep the system simple and maintainable.
+FastAPI automatically generates interactive API documentation.
 
-### React + Vite
-
-React with Vite was selected for a lightweight frontend development environment.
-
-### Existing FastAPI Backend
-
-The existing backend API was reused instead of rewriting the backend.
-
-### JWT Authentication
-
-JWT authentication provides a straightforward stateless authentication mechanism.
-
-### Backend Authorization
-
-Authorization is enforced by the backend instead of relying only on frontend route restrictions.
-
-### Many-to-Many Staff Assignment
-
-A separate `session_staff` table allows staff members to be assigned to multiple sessions and sessions to have multiple staff members.
-
-### Explicit Registration Lifecycle
-
-Registration states are represented explicitly instead of using multiple unrelated boolean fields.
-
-### Immutable Registration History
-
-Registration history is stored separately so that changes remain auditable.
-
-### Server-Side Search and Pagination
-
-Filtering, sorting and pagination are performed by the backend to avoid loading large registration datasets into the browser.
-
----
-
-# Documentation
-
-Additional project documentation is available in the `docs/` directory.
-
-### Architecture
+After starting the backend, open:
 
 ```text
-docs/architecture.md
+http://127.0.0.1:8000/docs
 ```
 
-Describes:
+The Swagger UI can be used to:
 
-* System components
-* Communication between components
-* Runtime locations
-* End-to-end request flow
-* Features intentionally not implemented
+* View endpoints
+* View request schemas
+* View response schemas
+* Authenticate
+* Send test requests
+* Inspect API responses
 
-### Database Schema
+Alternative OpenAPI documentation is available at:
 
 ```text
-docs/schema.md
+http://127.0.0.1:8000/redoc
 ```
-
-Describes:
-
-* Database tables
-* Columns
-* Relationships
-* Constraints
-* Denormalization
-* Scaling considerations
-
-### Development Plan
-
-```text
-docs/plan.md
-```
-
-Describes:
-
-* Development sessions
-* Work ordering
-* Estimated effort
-* Actual effort
-* Scope decisions
-
-### Technical Decisions
-
-```text
-docs/decisions.md
-```
-
-Contains important implementation decisions and alternatives considered.
-
-### AI Usage
-
-```text
-docs/ai-prompts.md
-```
-
-Documents AI-assisted development prompts, outputs, and corrections.
 
 ---
 
 # Testing Checklist
-
-The following scenarios should be tested before deployment:
 
 ## Authentication
 
 * [ ] Register attendee
 * [ ] Login with valid credentials
 * [ ] Reject invalid credentials
-* [ ] Logout
-* [ ] Restore authenticated session after refresh
+* [ ] Verify JWT authentication
+* [ ] Verify `/auth/me`
+* [ ] Verify role information
+
+## Attendee
+
+* [ ] View events
+* [ ] View sessions
+* [ ] Register for a session
+* [ ] View registrations
+* [ ] Cancel eligible registration
+* [ ] View registration history
 
 ## Organizer
 
@@ -823,118 +1112,357 @@ The following scenarios should be tested before deployment:
 * [ ] Create session
 * [ ] Edit session
 * [ ] Delete session
+* [ ] Change capacity
+* [ ] View registrations
 * [ ] Assign staff
-* [ ] Remove staff
+* [ ] View dashboard
+* [ ] View capacity alerts
+* [ ] Import CSV
+* [ ] Export CSV
 
-## Attendee
+## Check-in Staff
 
-* [ ] View events
-* [ ] View sessions
-* [ ] Register for session
-* [ ] View registration
-* [ ] Cancel eligible registration
-* [ ] View registration history
-
-## Registration
-
-* [ ] Reserved registration
-* [ ] Confirm registration
-* [ ] Check in registration
-* [ ] Cancel registration
-* [ ] Reject invalid state transition
-* [ ] Reject registration when capacity is full
-* [ ] Verify expiration
-
-## Staff
-
+* [ ] Login as check-in staff
 * [ ] View assigned sessions
 * [ ] View assigned registrations
 * [ ] Confirm registration
-* [ ] Check in attendee
-* [ ] Verify staff cannot create sessions
-* [ ] Verify staff cannot modify capacity
+* [ ] Cancel eligible registration
+* [ ] Check attendee in
+* [ ] Verify unauthorized organizer operations are blocked
 
-## CSV
+## Authorization
 
-* [ ] Import valid rows
-* [ ] Handle duplicate rows
-* [ ] Handle invalid rows
-* [ ] Verify valid rows still import
-* [ ] Export check-in sheet
+* [ ] Attendee cannot access organizer operations
+* [ ] Attendee cannot assign staff
+* [ ] Staff cannot create events
+* [ ] Staff cannot modify session capacity
+* [ ] Staff cannot assign other staff
+* [ ] Staff cannot access unassigned sessions
+* [ ] Unauthorized API requests return appropriate errors
 
-## Dashboard
+## Capacity
 
-* [ ] Sessions today
-* [ ] Checked-in today
-* [ ] Expired this week
-* [ ] Full sessions
-* [ ] Status breakdown
-* [ ] Session registration statistics
-* [ ] 14-day check-in chart
-
-## Capacity Alerts
-
-* [ ] Alert when session becomes full
-* [ ] Dismiss alert
-* [ ] Free a seat
-* [ ] Fill session again
-* [ ] Verify alert appears again
+* [ ] Registration cannot exceed capacity
+* [ ] Reserved registrations count toward capacity
+* [ ] Confirmed registrations count toward capacity
+* [ ] Checked-in registrations count toward capacity
+* [ ] Capacity alerts work correctly
 
 ---
 
-# API Documentation
+# Development Decisions
 
-Once the backend is running, interactive API documentation is available through FastAPI:
+## FastAPI
+
+FastAPI was selected because it provides:
+
+* High performance
+* Automatic OpenAPI documentation
+* Pydantic validation
+* Easy API development
+* Async support
+
+## PostgreSQL
+
+PostgreSQL provides:
+
+* Relational data modeling
+* Transaction support
+* Strong consistency
+* Data integrity
+* Production-ready database functionality
+
+## Alembic
+
+Alembic is used to manage database schema migrations.
+
+This allows database changes to be tracked and reproduced across environments.
+
+## React + Vite
+
+React provides component-based frontend development while Vite provides a fast development environment.
+
+## Backend Authorization
+
+Authorization is enforced at the API level so that users cannot bypass security restrictions simply by modifying frontend code.
+
+---
+
+# Development Workflow
+
+A typical development workflow is:
 
 ```text
-/docs
+Create/modify feature
+        │
+        ▼
+Update backend/frontend
+        │
+        ▼
+Update database models if required
+        │
+        ▼
+Create Alembic migration
+        │
+        ▼
+Run migration
+        │
+        ▼
+Test API
+        │
+        ▼
+Test frontend
+        │
+        ▼
+Test authorization
+        │
+        ▼
+Commit changes
 ```
 
-This can be used to inspect and manually test the available endpoints.
+---
+
+# Git Workflow
+
+Check repository status:
+
+```bash
+git status
+```
+
+Add changes:
+
+```bash
+git add .
+```
+
+Create a commit:
+
+```bash
+git commit -m "Update README"
+```
+
+Push changes:
+
+```bash
+git push origin master
+```
+
+If your current branch is different, replace `master` with the appropriate branch name.
+
+---
+
+# Troubleshooting
+
+## Backend Does Not Start
+
+Check that:
+
+* Python is installed
+* Virtual environment is activated
+* Dependencies are installed
+* PostgreSQL is running
+* `.env` is configured correctly
+* Database exists
+* Alembic migrations have been applied
+
+Run:
+
+```bash
+alembic upgrade head
+```
+
+---
+
+## Database Connection Error
+
+Verify:
+
+```env
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/event_registration
+```
+
+Make sure:
+
+* PostgreSQL is running
+* Database name is correct
+* Username is correct
+* Password is correct
+* PostgreSQL port is correct
+
+---
+
+## Frontend Does Not Start
+
+Navigate to the frontend:
+
+```bash
+cd frontend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Then:
+
+```bash
+npm run dev
+```
+
+---
+
+## Demo Organizer or Staff User Does Not Exist
+
+Run the seed script from the `backend` directory:
+
+```bash
+python app/seed.py
+```
+
+Then use:
+
+```text
+Organizer
+Email: organizer@example.com
+Password: Organizer@123
+```
+
+or:
+
+```text
+Check-in Staff
+Email: staff@example.com
+Password: Staff@123
+```
+
+---
+
+## 403 Forbidden
+
+A `403 Forbidden` response generally means the authenticated user does not have permission to perform the requested operation.
+
+Check:
+
+1. The logged-in user's role.
+2. Whether the endpoint requires organizer permissions.
+3. Whether the staff member is assigned to the relevant session.
+4. Whether the requested operation is allowed for that role.
+5. Whether the frontend is using the correct authenticated account.
 
 ---
 
 # Future Improvements
 
-Possible future improvements include:
+Potential future improvements include:
 
 * Email notifications
-* SMS notifications
 * QR-code based check-in
-* Real-time dashboard updates
-* Redis caching
-* Background jobs
+* Automated reminders
 * Advanced analytics
-* Automated deployment
-* Docker-based deployment
-* Automated unit/integration tests
+* Event calendar integration
+* Export reports
+* Audit logging
+* Redis caching
+* Background task processing
+* Docker deployment
 * CI/CD pipeline
-* Production monitoring
-
-These were kept outside the current scope to focus on the required event registration functionality.
+* Cloud deployment
+* Automated test suite
+* Rate limiting
+* Refresh token support
+* Password reset functionality
+* Email verification
 
 ---
 
 # Project Status
 
-The current implementation covers the required event registration workflow including:
+The project currently provides the core functionality required for an event registration platform, including:
 
 * Authentication
-* Role-based access
-* Events
-* Sessions
+* Role-based access control
+* Event management
+* Session management
 * Registration lifecycle
 * Staff assignment
-* Search/filtering/pagination
+* Check-in
+* Search and filtering
+* Pagination
 * CSV import/export
 * Dashboard
+* Capacity monitoring
 * Registration history
-* Capacity alerts
+
+The system is suitable for local development, demonstration, testing, and further feature development.
+
+---
+
+# Repository
+
+GitHub Repository:
+
+**Event Registration System**
+
+```text
+https://github.com/Hassara17/event-registration-system
+```
+
+---
 
 
+
+# Live Demo
+
+The Event Registration System is deployed and available online.
+
+## Frontend
+
+The React frontend is deployed on **Vercel**:
+
+[Open Event Registration System Frontend](https://event-registration-system-g303ykami-hassan-20f1.vercel.app/login)
+
+Use this link to access the application and test the user interface.
+
+## Backend API
+
+The FastAPI backend is deployed on **Render**:
+
+[Open Backend API Documentation](https://event-registration-system-ogv7.onrender.com/docs)
+
+The backend provides interactive **Swagger/OpenAPI documentation**, where you can view and test the available API endpoints.
+
+### Deployment Architecture
+
+```text
+                    ┌─────────────────────────┐
+                    │       Vercel            │
+                    │    React + Vite         │
+                    │      Frontend           │
+                    └────────────┬────────────┘
+                                 │
+                                 │ HTTPS / REST API
+                                 ▼
+                    ┌─────────────────────────┐
+                    │        Render           │
+                    │       FastAPI           │
+                    │        Backend          │
+                    └────────────┬────────────┘
+                                 │
+                                 │ SQLAlchemy
+                                 ▼
+                    ┌─────────────────────────┐
+                    │      Supabase           │
+                    │        Database         │
+                    └─────────────────────────┘
+```
+
+> **Note:** The frontend communicates with the deployed FastAPI backend through REST APIs. The backend API documentation can be used to test the API independently.
 
 # License
 
-This project was developed as part of a software development assignment.
+This project is developed for educational and assignment purposes.
 
-
+Unless otherwise specified, the project is not intended for production deployment without additional security, testing, monitoring, and infrastructure configuration.
